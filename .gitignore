@@ -1,0 +1,30 @@
+# Секреты
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Данные и кэш
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/llm_cache.json
+
+# Логи и временное
+*.log
+tmp/
+
+# ОС и IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
