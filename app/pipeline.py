@@ -44,9 +44,14 @@ def _write_json(path: Path, payload) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _enforce_safety(email: Email, item: Classification) -> Classification:
+def _enforce_safety(email: Email, item: Classification, threshold: float) -> Classification:
     if set(item.risks) & SENSITIVE_RISKS and item.action != Action.ASK:
         item.reasons.append("страховка: чувствительная тема всегда уходит на подтверждение")
+        item.action = Action.ASK
+    if item.action != Action.ASK and item.confidence < threshold:
+        item.reasons.append(
+            f"уверенность {item.confidence:.2f} ниже порога {threshold:.2f}: решает человек"
+        )
         item.action = Action.ASK
     return item
 
@@ -115,7 +120,10 @@ def run(
     safety_guarded = sum(
         1 for item in raw if set(item.risks) & SENSITIVE_RISKS and item.action != Action.ASK
     )
-    classifications = [_enforce_safety(email, item) for email, item in zip(emails, raw)]
+    classifications = [
+        _enforce_safety(email, item, settings.confidence_threshold)
+        for email, item in zip(emails, raw)
+    ]
     for item in classifications:
         if not item.assignee_email and item.assignee:
             item.assignee_email = contacts.get(item.assignee.lower(), "")

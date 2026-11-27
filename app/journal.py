@@ -127,6 +127,8 @@ CREATE TABLE IF NOT EXISTS meeting_minutes (
   seconds INTEGER NOT NULL DEFAULT 0,
   profile TEXT,
   role TEXT,
+  employee TEXT,
+  employee_position TEXT,
   week TEXT,
   subtitle TEXT,
   channel TEXT,
@@ -177,6 +179,10 @@ class Journal:
         ):
             if name not in task_columns:
                 self.conn.execute(f"ALTER TABLE protocol_tasks ADD COLUMN {name} {ddl}")
+        minute_columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(meeting_minutes)")}
+        for name in ("employee", "employee_position"):
+            if name not in minute_columns:
+                self.conn.execute(f"ALTER TABLE meeting_minutes ADD COLUMN {name} TEXT")
         self.conn.commit()
 
     def close(self) -> None:
@@ -297,14 +303,16 @@ class Journal:
     def save_minutes(self, payload: dict[str, Any]) -> int:
         """Протокол встречи, которую Ася провела голосом."""
         cur = self.conn.execute(
-            "INSERT INTO meeting_minutes(started_at, finished_at, seconds, profile, role, week, subtitle, channel, items_json) "
-            "VALUES(?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO meeting_minutes(started_at, finished_at, seconds, profile, role, employee, employee_position, week, subtitle, channel, items_json) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
             (
                 payload["started_at"],
                 payload.get("finished_at", ""),
                 int(payload.get("seconds", 0)),
                 payload.get("profile", ""),
                 payload.get("role", ""),
+                payload.get("employee", ""),
+                payload.get("employee_position", ""),
                 payload.get("week", ""),
                 payload.get("subtitle", ""),
                 payload.get("channel", ""),
@@ -323,6 +331,8 @@ class Journal:
             "seconds": int(row["seconds"] or 0),
             "profile": row["profile"] or "",
             "role": row["role"] or "",
+            "employee": row["employee"] or "",
+            "employee_position": row["employee_position"] or "",
             "week": row["week"] or "",
             "subtitle": row["subtitle"] or "",
             "channel": row["channel"] or "",

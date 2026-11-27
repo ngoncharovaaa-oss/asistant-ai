@@ -10,8 +10,8 @@ from app.config import Settings
 from app.datasets import load_calendar, load_inbox, load_org, load_tasks
 from app.journal import Journal
 from app.meetings import parse_all
-from app.models import SENSITIVE_RISKS, Action, Email
-from app.pipeline import run
+from app.models import SENSITIVE_RISKS, Action, Classification, Email
+from app.pipeline import _enforce_safety, run
 from app.profile import load_profile
 
 
@@ -231,3 +231,18 @@ def test_morning_and_weekly_digest(settings: Settings) -> None:
     assert digest["protected_hours"] > 0
     assert digest["protocols"]
     assert len(digest["tasks_overdue"]) >= 1
+
+
+def test_low_confidence_escalates_to_human(settings: Settings) -> None:
+    email = _email("Тест", "Текст", datetime(2026, 12, 7, 9, 0))
+    unsure = Classification(
+        email_id="x", action=Action.AUTO, topic="тест", confidence=0.6, reasons=[], risks=[]
+    )
+    guarded = _enforce_safety(email, unsure, settings.confidence_threshold)
+    assert guarded.action == Action.ASK
+    assert any("порог" in reason for reason in guarded.reasons)
+
+    sure = Classification(
+        email_id="y", action=Action.AUTO, topic="тест", confidence=0.92, reasons=[], risks=[]
+    )
+    assert _enforce_safety(email, sure, settings.confidence_threshold).action == Action.AUTO

@@ -539,6 +539,25 @@
   .int-item-x{color:var(--muted);font-size:14px;line-height:1}
   .int-note{font-size:9.5px;line-height:1.5;color:var(--muted);margin-top:9px}
   .int-note b{color:var(--ink-2)}
+  .mail-day{margin-top:9px;border-top:1px dashed var(--line);padding-top:9px}
+  .mail-day-head{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;min-width:0}
+  .mail-day-head b{font-size:11.5px;color:var(--ink)}
+  .mail-day-head small{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .mail-day-sum{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .mail-day-list{display:flex;flex-direction:column;gap:5px;margin-top:7px;max-height:330px;overflow:auto;padding-right:2px}
+  .md-letter{border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:6px 8px}
+  .md-top{display:flex;gap:6px;align-items:center;min-width:0}
+  .md-time{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .md-top b{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .md-top .badge{margin-left:auto;font-size:9px;white-space:nowrap;flex:0 0 auto}
+  .md-subject{font-size:10.5px;color:var(--ink-2);margin-top:2px;line-height:1.35}
+  .md-actions{display:flex;gap:9px;margin-top:4px;flex-wrap:wrap}
+  .md-actions button{border:0;background:none;padding:0;font-size:10px;color:var(--terra);cursor:pointer}
+  .md-actions button:hover{text-decoration:underline}
+  .md-draft{margin-top:6px;border-left:2px solid var(--terra);padding:5px 8px;background:#FFF9F2;border-radius:0 7px 7px 0}
+  .md-draft-label{font-size:9.5px;color:var(--muted);margin-bottom:3px}
+  .md-draft pre{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:10.5px;line-height:1.45;color:var(--ink);margin:0}
+  .md-note{font-size:9.5px;line-height:1.45;color:var(--muted);margin-top:7px}
   .link-save-done{color:#5C6B3B}
   .rule-row{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #EDDFCC}
   .rule-row:last-of-type{border-bottom:0}
@@ -816,7 +835,7 @@
         <div class="side-title">Календарь <span>декабрь 2026</span></div>
         <div class="mini-cal" id="miniCal" role="group" aria-label="Календарь на декабрь 2026"></div>
         <div class="cal-day">
-          <div class="cal-day-head"><b id="miniCalDayTitle">7 декабря</b><button class="cal-link" id="miniCalGo" type="button">План →</button></div>
+          <div class="cal-day-head"><b id="miniCalDayTitle">7 декабря</b><button class="cal-link" id="miniCalGo" type="button">Задачи дня →</button></div>
           <div class="cal-events" id="miniCalDay"></div>
         </div>
       </div>
@@ -921,21 +940,21 @@
           <div>
             <div class="eyebrow">Экономика эксплуатации</div>
             <h1>Сколько стоит черновик</h1>
-            <p>50–100 писем в день × 21 рабочий день = 1 050–2 100 обращений в месяц. Считаем только автоматизируемую долю, эскалации остаются человеку. Встречи 25–40 в неделю — отдельный контур: 105–168 протоколов, экономия 35–56 тыс. ₽.</p>
+            <p>Демо-неделя ИИкузницы — 80 писем, это 350 обращений в месяц и 175 черновиков при автодоле 50%. Полная нагрузка брифа 50–100 писем в день — 1 050–2 100 обращений и 525–1 050 черновиков. Считаем только автоматизируемую долю, эскалации остаются человеку. Встречи 25–40 в неделю — отдельный контур: 105–168 протоколов, экономия 35–56 тыс. ₽.</p>
           </div>
           <span class="pill">модель · не обещание</span>
         </div>
         <div class="kpis">
-          <div class="kpi"><span class="lbl">Черновиков в месяц</span><b id="kDrafts">788</b><small>при 1 575 обращениях и 50%</small></div>
-          <div class="kpi"><span class="lbl">Эксплуатация</span><b id="kTotal">82 339 ₽</b><small>проверка + токены + инфраструктура</small></div>
-          <div class="kpi accent"><span class="lbl">Экономия в месяц</span><b id="kSave">311 661 ₽</b><small>против ручной обработки</small></div>
+          <div class="kpi"><span class="lbl">Черновиков в месяц</span><b id="kDrafts">175</b><small>при 350 обращениях и 50%</small></div>
+          <div class="kpi"><span class="lbl">Эксплуатация</span><b id="kTotal">18 279 ₽</b><small>проверка + токены + инфраструктура</small></div>
+          <div class="kpi accent"><span class="lbl">Экономия в месяц</span><b id="kSave">69 221 ₽</b><small>против ручной обработки</small></div>
           <div class="kpi"><span class="lbl">Цена черновика</span><b id="kPer">104,5 ₽</b><small>против 500 ₽ вручную</small></div>
         </div>
         <div class="calc">
           <div class="card pad">
             <h3>Допущения</h3>
             <div class="fields">
-              <div class="field"><label>Обращений в месяц</label><input id="inN" type="number" min="50" max="5000" step="25" value="1575"></div>
+              <div class="field"><label>Обращений в месяц</label><input id="inN" type="number" min="50" max="5000" step="25" value="350"></div>
               <div class="field"><label>Доля автоматизации, %</label><input id="inAuto" type="number" min="10" max="90" step="1" value="50"></div>
               <div class="field"><label>Ставка руководителя, ₽/час</label><input id="inRate" type="number" min="500" max="10000" step="100" value="2500"></div>
               <div class="field"><label>Проверка черновика, мин</label><input id="inReview" type="number" min="0.5" max="20" step="0.5" value="2"></div>
@@ -1050,7 +1069,7 @@
       <div class="view" id="view-plan" hidden>
         <div class="view-head">
           <div>
-            <div class="eyebrow">План и сверка · понедельник, 7 декабря</div>
+            <div class="eyebrow" id="planEyebrow">План и сверка · понедельник, 7 декабря</div>
             <h1>День и неделя</h1>
             <p>План собран из календаря на две недели, 12 задач команды и утренней сводки. Защищённый блок стратегии Ася не занимает операционными встречами.</p>
           </div>
@@ -1068,30 +1087,14 @@
         <div id="planDay">
           <div class="plan-grid">
             <div class="card plan-card">
-              <h3>Расписание · 25 встреч в неделю</h3>
-              <div class="tl">
-                <div class="tl-row done"><time>10:00</time><span class="dot"></span><div><b>Планёрка направления</b><small>Телемост · 7 участников · заметки разобраны</small></div></div>
-                <div class="tl-row on" id="tlDist"><time>10:40</time><span class="dot"></span><div><b>Протокол на утверждение</b><small>Telegram · 5 поручений · после подтверждения</small></div></div>
-                <div class="tl-row"><time>11:00</time><span class="dot"></span><div><b>Статус продаж SMB</b><small>Ольга Смирнова, Алексей Новиков · прогноз 94%</small></div></div>
-                <div class="tl-row"><time>13:30</time><span class="dot"></span><div><b>Синк с ИТ</b><small>Ольга Смирнова · доступы и CRM</small></div></div>
-                <div class="tl-row"><time>15:00</time><span class="dot"></span><div><b>Статус e-commerce</b><small>Анна Волкова, Дмитрий Козлов</small></div></div>
-                <div class="tl-row protect"><time>16:30</time><span class="dot"></span><div><b>Защищённый блок: стратегия</b><small>18:00 · Ася не ставит сюда операционные встречи</small></div></div>
-              </div>
+              <h3 id="planSchedTitle">Расписание · 25 встреч в неделю</h3>
+              <div class="tl" id="planTl"></div>
               <div class="p-sec">Поручения</div>
               <div id="planDayTasks"></div>
             </div>
             <div class="card plan-card">
               <h3>Фокус дня</h3>
-              <div class="inputs">
-                <div>Комитет 8 декабря: бюджет Q1 и критерии типовых сделок.</div>
-                <div>Просрочено: КП «ТехноСтрой» (t001) и отчёт e-com (t007).</div>
-                <div>Пять тем ждут вашего решения: срок клиенту, кадры, бюджет.</div>
-              </div>
-              <div class="p-sec">Входящие</div>
-              <div class="plan-task"><div class="pt-left"><span class="ava xs ini">КР</span><b>«Ромашка» · сроки</b></div><span>подтверждение</span></div>
-              <div class="plan-task"><div class="pt-left"><span class="ava xs ini">Т</span><b>«ТехноСтрой» · КП</b></div><span>делегировано</span></div>
-              <div class="plan-task"><div class="pt-left"><span class="ava xs ini">НП</span><b>Наталья · бюджет</b></div><span>комитет 8 дек</span></div>
-              <div class="dist-note">9 тем за день: 5 — на подтверждении, 4 Ася закрыла по правилам профиля. Отправка ответов — только после вашего подтверждения.</div>
+              <div id="planFocus"></div>
             </div>
           </div>
         </div>
@@ -1168,6 +1171,7 @@
                 </div>
                 <div class="int-list" id="linkMailList"></div>
                 <div class="int-state" id="linkMailState"></div>
+                <div class="mail-day" id="linkMailDay" hidden></div>
               </div>
             </div>
             <div class="int-card">
@@ -1348,7 +1352,7 @@
       <div class="card trace-card">
         <div class="side-title">Цикл обработки <span id="traceMode">7 шагов</span></div>
         <div class="trace" id="trace">
-          <div class="step" data-step="0"><span class="dot"></span><div><b>Наблюдение</b><small>IMAP + Bot API</small></div><em>0,4 с</em></div>
+          <div class="step" data-step="0"><span class="dot"></span><div><b>Наблюдение</b><small>IMAP + Bot API</small></div><em>≈0,4 с</em></div>
           <div class="step" data-step="1"><span class="dot"></span><div><b>Факты</b><small>search_knowledge · 14 фактов</small></div><em>1,8 с</em></div>
           <div class="step" data-step="2"><span class="dot"></span><div><b>Черновик</b><small>draft_in_style · 6 из 7</small></div><em>7,4 с</em></div>
           <div class="step" data-step="3"><span class="dot"></span><div><b>Самопроверка</b><small>self_check · 100%</small></div><em>1,2 с</em></div>
@@ -1403,7 +1407,7 @@
   <div class="modal-card">
     <div class="video-head">
       <b>Телемост · демо-стенд</b>
-      <span class="badge live" id="vcLatency">отклик 0,4 с</span>
+      <span class="badge live" id="vcLatency">отклик ≈2 с</span>
       <button id="vcClose" type="button" aria-label="Закрыть">×</button>
     </div>
     <div class="video-body">
@@ -1790,14 +1794,18 @@
 
   function renderPlan() {
     const approved = meeting.status === "approved" || meeting.status === "distributed";
-    const list = $("#planDayTasks");
-    if (list) {
-      if (!approved) {
-        list.innerHTML = `<div class="dist-note">Протокол ${meeting.status === "review" ? "на проверке у инициатора" : "ещё не сформирован"} — поручения ждут утверждения.</div>` +
-          meeting.tasks.map(t => `<div class="plan-task"><div class="pt-left">${avaOf(t.who, "xs")}<b>${t.text}</b></div><span>${t.who.split(" ")[0]} · ${fmtDue(t.due)} · ждёт</span></div>`).join("");
-      } else {
-        list.innerHTML = meeting.tasks.map(t => `<div class="plan-task"><div class="pt-left">${avaOf(t.who, "xs")}<b>${t.text}</b></div><span>${t.who.split(" ")[0]} · ${fmtDue(t.due)}${t.sent ? " · передано" : ""}</span></div>`).join("");
+    if (planDayNum === 7) {
+      const list = $("#planDayTasks");
+      if (list) {
+        if (!approved) {
+          list.innerHTML = `<div class="dist-note">Протокол ${meeting.status === "review" ? "на проверке у инициатора" : "ещё не сформирован"} — поручения ждут утверждения.</div>` +
+            meeting.tasks.map(t => `<div class="plan-task"><div class="pt-left">${avaOf(t.who, "xs")}<b>${t.text}</b></div><span>${t.who.split(" ")[0]} · ${fmtDue(t.due)} · ждёт</span></div>`).join("");
+        } else {
+          list.innerHTML = meeting.tasks.map(t => `<div class="plan-task"><div class="pt-left">${avaOf(t.who, "xs")}<b>${t.text}</b></div><span>${t.who.split(" ")[0]} · ${fmtDue(t.due)}${t.sent ? " · передано" : ""}</span></div>`).join("");
+        }
       }
+    } else {
+      renderDayTasks();
     }
     const pt = $("#planTasks");
     if (pt) pt.textContent = meeting.tasks.length;
@@ -1982,7 +1990,7 @@
     setAvatar("talk", "Отвечает");
     addVcLine("bot", ans);
     $("#vcSub").textContent = ans;
-    $("#vcLatency").textContent = "отклик 0,4 с";
+    $("#vcLatency").textContent = "отклик ≈2 с";
     await sleep(2100);
     setAvatar("smile", "На связи");
     vcBusy = false;
@@ -2444,7 +2452,7 @@
   });
 
   /* ---------- экономика ---------- */
-  const TOKEN_PER_DRAFT = 912 / 788; // ≈1,16 ₽: классификация, черновик, дайджесты
+  const TOKEN_PER_DRAFT = 196 / 175; // ≈1,12 ₽: классификация, черновик, самопроверка
   const inputs = ["inN", "inAuto", "inRate", "inReview", "inManual", "inInfra"].map(id => $("#" + id));
 
   function econModel() {
@@ -2465,7 +2473,7 @@
     const perRequest = total / N;
     const perDraftManual = manual / 60 * rate;
     const perDraftReview = review / 60 * rate;
-    const paybackDrafts = Math.max(1, Math.ceil(infraBase / Math.max(1, perDraftManual - perDraftReview - TOKEN_PER_DRAFT)));
+    const paybackDrafts = Math.max(1, Math.ceil(infra / Math.max(1, perDraftManual - perDraftReview - TOKEN_PER_DRAFT)));
     return { N, auto, rate, review, manual, infraBase, drafts, tokens, reviewCost, infra, total, manualCost, save, perDraft, perRequest, paybackDrafts };
   }
 
@@ -2484,7 +2492,7 @@
       <div class="break-row"><span>Доля экономии</span><b>${m.manualCost ? Math.round(m.save / m.manualCost * 100) : 0}%</b></div>
       <div class="break-row"><span>Стоимость запроса</span><b>${rub1(m.perRequest)}</b></div>
       <div class="break-row"><span>Точка окупаемости</span><b>${m.paybackDrafts} черновиков</b></div>`;
-    const rows = [525, 788, 1050].map(d => {
+    const rows = [175, 350, 700].map(d => {
       const per = d * (m.review / 60 * m.rate + TOKEN_PER_DRAFT) + m.infraBase * d / 150;
       const man = d * m.manual / 60 * m.rate;
       return `<tr><td>${num(d)}</td><td>${rub(man)}</td><td>${rub(per)}</td><td class="save">${rub(man - per)}</td><td>${rub1(per / d)}</td></tr>`;
@@ -2832,6 +2840,8 @@
   const escHtml = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const tgKind = k => k === "bot" ? "бот" : "аккаунт";
   const genTime = g => { const t = g.at ? new Date(g.at) : null; return t && !isNaN(t.getTime()) ? t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : ""; };
+  const isDemoZoom = url => { const d = linksData(); return !!(d.zoomDemo || (d.gen || []).some(g => g.provider === "zoom" && g.url === url)); };
+  const isDemoTm = url => { const d = linksData(); return !!(d.telemostDemo || (d.gen || []).some(g => g.provider === "telemost" && g.url === url)); };
   function linksData() {
     let d;
     try { d = JSON.parse(localStorage.getItem(LINKS_KEY) || "{}") || {}; } catch (e) { d = {}; }
@@ -2880,7 +2890,62 @@
     const n = d.mails.length;
     linkBadge("#linkMailBadge", n > 0, n ? n + " " + plural(n, ["почта", "почты", "почт"]) : "нет почт");
     $("#chMailSmall").textContent = n ? d.mails[0].address + (n > 1 ? " +" + (n - 1) : "") + " · " + (PROVIDER_NAME[d.mails[0].provider] || "почта") : "80 писем за неделю · 16 сегодня";
+    renderMailDay(d);
   }
+  /* письма за день по добавленной почте: демо-сценарий, без IMAP */
+  let mdOpen = null; /* null — раскрыт первый черновик; "" — всё свёрнуто; id — раскрыт он */
+  const mdMinutes = it => { const m = /^(\d{1,2}):(\d{2})/.exec(it.time || ""); return m ? (+m[1]) * 60 + (+m[2]) : 0; };
+  const mdCopies = it => { const m = /×(\d+)/.exec(it.time || ""); return m ? +m[1] : 1; };
+  function renderMailDay(d) {
+    const box = $("#linkMailDay");
+    if (!box) return;
+    const mails = (d && d.mails) || [];
+    if (!mails.length) { box.hidden = true; box.innerHTML = ""; return; }
+    const mail = items.filter(i => i.channel === "Почта").slice().sort((a, b) => mdMinutes(b) - mdMinutes(a));
+    const autoId = (mail.find(i => i.status !== "ignore") || {}).id || "";
+    const openId = mdOpen === null ? autoId : mdOpen;
+    const letters = mail.reduce((s, i) => s + mdCopies(i), 0);
+    const drafts = mail.filter(i => i.status !== "ignore").length;
+    const esc = mail.filter(i => i.status === "escalation").length;
+    const today = new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+    box.hidden = false;
+    box.innerHTML = `
+      <div class="mail-day-head"><b>Письма за сегодня · ${escHtml(today)}</b><small>${escHtml(mails[0].address)}${mails.length > 1 ? " +" + (mails.length - 1) : ""}</small></div>
+      <div class="mail-day-sum">${letters} ${plural(letters, ["письмо", "письма", "писем"])} · ${mail.length} ${plural(mail.length, ["тема", "темы", "тем"])} · ${drafts} ${plural(drafts, ["черновик", "черновика", "черновиков"])} · ${esc} на подтверждение</div>
+      <div class="mail-day-list">${mail.map(it => `
+        <div class="md-letter">
+          <div class="md-top"><span class="md-time">${escHtml(it.time)}</span><b>${escHtml(it.name)}</b><span class="badge ${it.sent ? "sent" : badgeClass[it.status]}">${it.sent ? "Отправлено" : statusLabel[it.status]}</span></div>
+          <div class="md-subject">${escHtml(it.subject)}</div>
+          <div class="md-actions">
+            <button type="button" data-md-open="${it.id}">${openId === it.id ? "Свернуть черновик" : "Черновик"}</button>
+            <button type="button" data-md-go="${it.id}">Открыть в ленте</button>
+            ${openId === it.id ? `<button type="button" data-md-copy="${it.id}">Копировать</button>` : ""}
+          </div>
+          ${openId === it.id ? `<div class="md-draft"><div class="md-draft-label">${it.status === "escalation" ? "Черновик · без вашего подтверждения не уходит" : "Что сделала Ася по правилу профиля"}</div><pre>${escHtml(it.draft)}</pre></div>` : ""}
+        </div>`).join("")}</div>
+      <div class="md-note">Это демо-письма сценария за сегодня: 0 отправок без вас. Настоящий ящик по IMAP/SMTP подключает локальный дашборд AsiStantAI — пароли на стенд не попадают.</div>`;
+  }
+  async function copyDraft(id) {
+    const it = items.find(x => x.id === id);
+    if (!it) return;
+    try { await navigator.clipboard.writeText(it.draft); toast("Черновик скопирован", it.subject); }
+    catch (e) { try { const ta = document.createElement("textarea"); ta.value = it.draft; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Черновик скопирован", it.subject); } catch (e2) { toast("Не удалось скопировать", "Выделите текст черновика вручную."); } }
+  }
+  $("#linkMailDay").addEventListener("click", e => {
+    const open = e.target.closest("[data-md-open]");
+    const copy = e.target.closest("[data-md-copy]");
+    const go = e.target.closest("[data-md-go]");
+    if (open) {
+      const id = open.dataset.mdOpen;
+      const mail = items.filter(i => i.channel === "Почта").slice().sort((a, b) => mdMinutes(b) - mdMinutes(a));
+      const autoId = (mail.find(i => i.status !== "ignore") || {}).id || "";
+      const cur = mdOpen === null ? autoId : mdOpen;
+      mdOpen = cur === id ? "" : id;
+      renderMailDay(linksData());
+    }
+    else if (copy) copyDraft(copy.dataset.mdCopy);
+    else if (go) { showView("inbox"); selectItem(go.dataset.mdGo, true); }
+  });
   function renderTgList(d) {
     $("#linkTgList").innerHTML = d.tgs.map(t => `
       <div class="int-item">
@@ -2894,13 +2959,13 @@
   function renderGenList(d) {
     $("#genList").innerHTML = d.gen.map(g => `
       <div class="int-item url">
-        <div class="int-item-main"><b>${g.provider === "zoom" ? "Zoom" : "Телемост"} · ${genTime(g)}</b><small>${escHtml(g.url)}</small></div>
+        <div class="int-item-main"><b>${g.provider === "zoom" ? "Zoom" : "Телемост"} · демо · ${genTime(g)}</b><small>${escHtml(g.url)}</small></div>
         <button class="int-item-btn" type="button" data-gen-copy="${escHtml(g.id)}">Копировать</button>
         <button class="int-item-btn" type="button" data-gen-open="${escHtml(g.id)}">Открыть</button>
         <button class="int-item-btn int-item-x" type="button" data-gen-del="${escHtml(g.id)}" aria-label="Удалить ссылку">×</button>
       </div>`).join("");
     linkBadge("#genBadge", d.gen.length > 0, String(d.gen.length));
-    linkState("#genState", d.gen.length ? "Копируются и открываются из списка. История — только в этом браузере." : "Ссылки появятся здесь после «Сгенерировать» или «Подключить Zoom».", "");
+    linkState("#genState", d.gen.length ? "Демо-ссылки: комната не создавалась, «Открыть» покажет пояснение. Копируются из списка; история — только в этом браузере." : "Ссылки появятся здесь после «Сгенерировать» или «Подключить Zoom».", "");
   }
   function renderLinks() {
     const d = linksData();
@@ -2939,8 +3004,15 @@
     }
     linksStore({ mails: [{ id: linkId(), address, provider, added: new Date().toISOString() }].concat(d.mails) });
     $("#linkMailAddress").value = "";
-    linkState("#linkMailState", "Добавлено: " + address + " · " + (PROVIDER_NAME[provider] || "почта") + ". Пароль не запрашивается — вход выполняет локальный дашборд.", "ok");
-    toast("Почта добавлена", address + " сохранён только в этом браузере.");
+    mdOpen = null;
+    renderMailDay(linksData());
+    const mail = items.filter(i => i.channel === "Почта");
+    const letters = mail.reduce((s, i) => s + mdCopies(i), 0);
+    const drafts = mail.filter(i => i.status !== "ignore").length;
+    linkState("#linkMailState", "Добавлено: " + address + " · " + (PROVIDER_NAME[provider] || "почта") + ". Подгружены письма за сегодня: " + letters + " писем, " + drafts + " черновиков. Настоящий ящик по IMAP подключает локальный дашборд — пароль на стенд не нужен.", "ok");
+    toast("Письма за день подгружены", letters + " писем · " + mail.length + " тем · " + drafts + " черновиков. Демо-сценарий, пароль не нужен.");
+    const dayBox = $("#linkMailDay");
+    if (dayBox) dayBox.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
   $("#linkMailAddress").addEventListener("keydown", e => { if (e.key === "Enter") $("#linkMailAdd").click(); });
   $("#linkMailAddress").addEventListener("input", () => linkState("#linkMailState", "", ""));
@@ -3029,7 +3101,7 @@
         linkState(stateSel, "Ссылка должна начинаться с " + label + " — вставьте её целиком.", "err");
         return;
       }
-      linksStore({ [provider]: url });
+      linksStore(provider === "zoom" ? { zoom: url, zoomDemo: false } : provider === "telemost" ? { telemost: url, telemostDemo: false } : { [provider]: url });
       toast("Ссылка сохранена", "Записана только в этом браузере. Открывается кнопкой «Открыть».");
     });
     $(inputSel).addEventListener("input", () => linkState(stateSel, "", ""));
@@ -3037,6 +3109,14 @@
       const url = $(inputSel).value.trim() || linksData()[provider] || "";
       if (!validator(url)) {
         linkState(stateSel, "Сначала вставьте и сохраните ссылку " + label + ".", "err");
+        return;
+      }
+      if (provider === "zoom" && isDemoZoom(url)) {
+        toast("Это демо-ссылка Zoom", "Комната не создавалась: ID случайный, поэтому Zoom отвечает «Недопустимая ссылка (3 001)». Настоящую комнату создаёт локальный дашборд через OAuth.");
+        return;
+      }
+      if (provider === "telemost" && isDemoTm(url)) {
+        toast("Это демо-ссылка Телемоста", "Комната не создавалась: номер случайный, поэтому Телемост отвечает «Такого звонка нет». Настоящую комнату создаёт локальный дашборд через API Телемоста.");
         return;
       }
       window.open(url, "_blank", "noopener");
@@ -3062,7 +3142,12 @@
       if (g) copyLink(g.url);
     } else if (btn.dataset.genOpen) {
       const g = d.gen.find(x => x.id === btn.dataset.genOpen);
-      if (g) window.open(g.url, "_blank", "noopener");
+      if (g) {
+        toast(g.provider === "zoom" ? "Это демо-ссылка Zoom" : "Это демо-ссылка Телемоста",
+          g.provider === "zoom"
+            ? "Комната не создавалась: ID случайный, поэтому Zoom отвечает «Недопустимая ссылка (3 001)». Настоящую комнату создаёт локальный дашборд через OAuth."
+            : "Комната не создавалась: номер случайный, поэтому Телемост отвечает «Такого звонка нет». Настоящую комнату создаёт локальный дашборд через API Телемоста.");
+      }
     } else if (btn.dataset.genDel) {
       linksStore({ gen: d.gen.filter(x => x.id !== btn.dataset.genDel) });
       toast("Ссылка удалена", "Удалена только из списка в этом браузере.");
@@ -3076,7 +3161,7 @@
     setTimeout(() => linkState("#linkZoomAuth", "Проверяю доступ и создаю комнату… (демо)", ""), 650);
     setTimeout(() => {
       const url = "https://zoom.us/j/" + rndDigits(11) + "?pwd=" + demoPwd();
-      linksStore({ zoomConn: { connected: true, account: "аккаунт руководителя", at: new Date().toISOString() }, zoom: url });
+      linksStore({ zoomConn: { connected: true, account: "аккаунт руководителя", at: new Date().toISOString() }, zoom: url, zoomDemo: true });
       addGen("zoom", url);
       btn.disabled = false;
       linkState("#linkZoomState", "Комната создана для подключённого аккаунта (демо) и добавлена в список ссылок.", "ok");
@@ -3084,7 +3169,7 @@
     }, 1400);
   });
   $("#linkZoomDisconnect").addEventListener("click", () => {
-    linksStore({ zoomConn: null, zoom: null });
+    linksStore({ zoomConn: null, zoom: null, zoomDemo: null });
     $("#linkZoomUrl").value = "";
     linkState("#linkZoomState", "Подключение снято — только в этом браузере. История ссылок осталась.", "");
     toast("Zoom отключён", "Демо-подключение удалено из браузера. Настоящий токен хранится только в локальном дашборде.");
@@ -3092,7 +3177,7 @@
   $("#linkZoomGen").addEventListener("click", () => {
     const url = "https://zoom.us/j/" + rndDigits(11) + "?pwd=" + demoPwd();
     $("#linkZoomUrl").value = url;
-    linksStore({ zoom: url });
+    linksStore({ zoom: url, zoomDemo: true });
     addGen("zoom", url);
     const conn = linksData().zoomConn && linksData().zoomConn.connected;
     linkState("#linkZoomState", "Демо-ссылка создана" + (conn ? " для подключённого аккаунта" : "") + " и добавлена в список ниже. Настоящую комнату создаёт локальный дашборд через Zoom OAuth — ключи в стенд не попадают.", "");
@@ -3101,7 +3186,7 @@
   $("#linkTmGen").addEventListener("click", () => {
     const url = "https://telemost.yandex.ru/j/" + rndDigits(16);
     $("#linkTmUrl").value = url;
-    linksStore({ telemost: url });
+    linksStore({ telemost: url, telemostDemo: true });
     addGen("telemost", url);
     linkState("#linkTmState", "Демо-ссылка создана и добавлена в список ниже. Настоящую комнату создаёт локальный дашборд — ключи в стенд не попадают.", "");
     toast("Ссылка Телемоста готова", "Демо-ссылка добавлена в список «Сгенерированные ссылки».");
@@ -3112,11 +3197,92 @@
   const MINI_EVENTS = {
     4: [{ t: "08:55", name: "Сверка плана" }],
     7: [{ t: "10:00", name: "Планёрка: критерии сделок" }, { t: "16:00", name: "Разбор почты с Асей" }],
-    8: [{ t: "14:00", name: "Комитет: бюджет Q1" }],
+    8: [{ t: "09:00", name: "1:1 с Ольгой Смирновой" }, { t: "14:00", name: "Комитет: бюджет Q1" }],
     17: [{ t: "12:00", name: "Отчёт e-com за ноябрь" }],
     25: [{ t: "18:00", name: "Запуск интеграции" }]
   };
   let miniSel = 7;
+  const DAY_NAMES = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+  const dayName = d => DAY_NAMES[new Date(2026, 11, d).getDay()];
+  let planDayNum = 7;
+  const PLAN_TL_7 = `
+    <div class="tl-row done"><time>10:00</time><span class="dot"></span><div><b>Планёрка направления</b><small>Телемост · 7 участников · заметки разобраны</small></div></div>
+    <div class="tl-row on" id="tlDist"><time>10:40</time><span class="dot"></span><div><b>Протокол на утверждение</b><small>Telegram · 5 поручений · после подтверждения</small></div></div>
+    <div class="tl-row"><time>11:00</time><span class="dot"></span><div><b>Статус продаж SMB</b><small>Ольга Смирнова, Алексей Новиков · прогноз 94%</small></div></div>
+    <div class="tl-row"><time>13:30</time><span class="dot"></span><div><b>Синк с ИТ</b><small>Ольга Смирнова · доступы и CRM</small></div></div>
+    <div class="tl-row"><time>15:00</time><span class="dot"></span><div><b>Статус e-commerce</b><small>Анна Волкова, Дмитрий Козлов</small></div></div>
+    <div class="tl-row protect"><time>16:30</time><span class="dot"></span><div><b>Защищённый блок: стратегия</b><small>18:00 · Ася не ставит сюда операционные встречи</small></div></div>`;
+  const PLAN_FOCUS_7 = `
+    <div class="inputs">
+      <div>Комитет 8 декабря: бюджет Q1 и критерии типовых сделок.</div>
+      <div>Просрочено: КП «ТехноСтрой» (t001) и отчёт e-com (t007).</div>
+      <div>Пять тем ждут вашего решения: срок клиенту, кадры, бюджет.</div>
+    </div>
+    <div class="p-sec">Входящие</div>
+    <div class="plan-task"><div class="pt-left"><span class="ava xs ini">КР</span><b>«Ромашка» · сроки</b></div><span>подтверждение</span></div>
+    <div class="plan-task"><div class="pt-left"><span class="ava xs ini">Т</span><b>«ТехноСтрой» · КП</b></div><span>делегировано</span></div>
+    <div class="plan-task"><div class="pt-left"><span class="ava xs ini">НП</span><b>Наталья · бюджет</b></div><span>комитет 8 дек</span></div>
+    <div class="dist-note">9 тем за день: 5 — на подтверждении, 4 Ася закрыла по правилам профиля. Отправка ответов — только после вашего подтверждения.</div>`;
+  const DAY_TASKS = {
+    4: [{ text: "Сверка плана с календарём", meta: "Ася · 08:55 · закрыто" }],
+    8: [
+      { text: "Комитет: бюджет Q1 и критерии типовых сделок", meta: "вы · 14:00" },
+      { text: "1:1 с Ольгой Смирновой", meta: "Ольга · 09:00" }
+    ],
+    17: [{ text: "Отчёт e-com за ноябрь", meta: "Анна Волкова · 12:00" }],
+    25: [{ text: "Запуск интеграции каналов", meta: "команда · 18:00" }]
+  };
+  function renderDayTasks() {
+    const list = $("#planDayTasks");
+    if (!list) return;
+    const tasks = DAY_TASKS[planDayNum] || [];
+    list.innerHTML = tasks.length
+      ? tasks.map(t => `<div class="plan-task"><div class="pt-left"><b>${escHtml(t.text)}</b></div><span>${escHtml(t.meta)}</span></div>`).join("")
+      : `<div class="dist-note">Поручений на ${planDayNum} декабря нет — Ася добавит их после утверждения протокола встречи.</div>`;
+  }
+  function renderPlanDay() {
+    const d = planDayNum;
+    const eyebrow = $("#planEyebrow");
+    if (eyebrow) eyebrow.textContent = "План и сверка · " + dayName(d) + ", " + d + " декабря";
+    const chip = $('#planTabs [data-plan="day"]');
+    if (chip) chip.textContent = "День · " + d + " декабря";
+    const title = $("#planSchedTitle");
+    if (title) title.textContent = d === 7 ? "Расписание · 25 встреч в неделю" : "Расписание · " + d + " декабря";
+    const tl = $("#planTl");
+    if (tl) {
+      if (d === 7) {
+        tl.innerHTML = PLAN_TL_7;
+      } else {
+        const evs = MINI_EVENTS[d] || [];
+        tl.innerHTML = (evs.length
+          ? evs.map(e => `<div class="tl-row"><time>${e.t}</time><span class="dot"></span><div><b>${escHtml(e.name)}</b><small>Событие из календаря · Ася напомнит за 15 минут</small></div></div>`).join("")
+          : `<div class="dist-note">Встреч нет — день свободен под фокус-блок и стратегию.</div>`) +
+          `<div class="tl-row protect"><time>16:30</time><span class="dot"></span><div><b>Защищённый блок: стратегия</b><small>18:00 · Ася не ставит сюда операционные встречи</small></div></div>`;
+      }
+    }
+    const focus = $("#planFocus");
+    if (focus) {
+      if (d === 7) {
+        focus.innerHTML = PLAN_FOCUS_7;
+      } else {
+        const evs = MINI_EVENTS[d] || [];
+        focus.innerHTML = evs.length
+          ? `<div class="inputs">${evs.map(e => `<div>${e.t} · ${escHtml(e.name)}</div>`).join("")}<div>После встреч — окно под стратегию, Ася его не занимает.</div></div><div class="dist-note">Фокус собран из календаря на ${d} декабря. Отправки — только после вашего подтверждения.</div>`
+          : `<div class="inputs"><div>Свободный день: можно поставить фокус-блок на стратегию.</div><div>Ася придержит операционные встречи и напомнит о поручениях со сроком.</div></div><div class="dist-note">Правила подтверждения действуют и в свободные дни.</div>`;
+      }
+    }
+    if (d === 7) renderPlan();
+    else renderDayTasks();
+  }
+  function openDayTasks(d) {
+    planDayNum = d;
+    showView("plan");
+    $$("#planTabs .chip").forEach(c => c.classList.toggle("on", c.dataset.plan === "day"));
+    $("#planDay").hidden = false;
+    $("#planWeek").hidden = true;
+    $("#planRec").hidden = true;
+    renderPlanDay();
+  }
   function renderMiniDay() {
     const evs = MINI_EVENTS[miniSel] || [];
     $("#miniCalDayTitle").textContent = miniSel + " декабря";
@@ -3129,7 +3295,7 @@
     for (let day = 0; day <= 31; day++) {
       if (day === 0) { cells.push(`<span class="day off"></span>`); continue; }
       const has = !!MINI_EVENTS[day];
-      cells.push(`<button class="day${has ? " has" : ""}${day === miniSel ? " on" : ""}" type="button" data-day="${day}" aria-label="${day} декабря">${day}</button>`);
+      cells.push(`<button class="day${has ? " has" : ""}${day === miniSel ? " on" : ""}" type="button" data-day="${day}" aria-label="${day} декабря" title="Открыть задачи: ${day} декабря">${day}</button>`);
     }
     $("#miniCal").innerHTML = cells.join("");
     renderMiniDay();
@@ -3139,8 +3305,9 @@
     if (!btn) return;
     miniSel = Number(btn.dataset.day);
     renderMiniCal();
+    openDayTasks(miniSel);
   });
-  $("#miniCalGo").addEventListener("click", () => showView("plan"));
+  $("#miniCalGo").addEventListener("click", () => openDayTasks(miniSel));
   renderMiniCal();
 
   /* ---------- старт ---------- */
@@ -3149,7 +3316,7 @@
   renderDetail();
   renderEcon();
   renderMeet();
-  renderPlan();
+  renderPlanDay();
   updateRuleSummary();
   setTrace(3);
   setAvatar("idle");

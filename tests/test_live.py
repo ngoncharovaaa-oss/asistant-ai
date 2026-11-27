@@ -6,7 +6,7 @@ import email as mailparse
 import json
 from datetime import datetime, timedelta
 from email.message import EmailMessage
-from email.utils import parsedate_to_datetime
+from email.utils import format_datetime, parsedate_to_datetime
 
 import pytest
 from fastapi import HTTPException
@@ -51,6 +51,10 @@ def _imap_day(value: str) -> datetime:
 def _mail_day(raw: bytes) -> datetime:
     parsed = parsedate_to_datetime(mailparse.message_from_bytes(raw).get("Date", ""))
     return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+
+
+def _today_stamp() -> str:
+    return format_datetime(datetime.now().astimezone())
 
 
 class FakeIMAP:
@@ -312,7 +316,7 @@ def test_live_requires_mail_config(settings) -> None:
         channel.fetch("a")
 
 
-def registry_mailbox(settings, address: str = "leader@example.ru"):
+def registry_mailbox(settings, address: str = "team@example.org"):
     store = MailboxStore(settings.db_path.parent / "mailboxes.json")
     return store.add(address, PASSWORD, provider="mailru", from_name="Руководитель")
 
@@ -328,8 +332,8 @@ def registry_channels(settings, messages: list[bytes], unseen: set[str] | None =
 
 def test_mailbox_store_masks_password_and_dedupes(settings) -> None:
     store = MailboxStore(settings.db_path.parent / "mailboxes.json")
-    mb = store.add("Leader@Example.ru", PASSWORD, provider="mailru")
-    assert mb.address == "leader@example.ru"
+    mb = store.add("Team@Example.org", PASSWORD, provider="mailru")
+    assert mb.address == "team@example.org"
     assert mb.imap_host == "imap.mail.ru"
     assert mb.smtp_host == "smtp.mail.ru"
     assert mb.smtp_port == 465
@@ -337,11 +341,11 @@ def test_mailbox_store_masks_password_and_dedupes(settings) -> None:
     assert PASSWORD not in public
     assert mb.public()["password_set"] is True
     with pytest.raises(MailboxError):
-        store.add("leader@example.ru", PASSWORD, provider="mailru")
+        store.add("team@example.org", PASSWORD, provider="mailru")
     with pytest.raises(MailboxError):
         store.add("не-почта", PASSWORD)
     with pytest.raises(MailboxError):
-        store.add("other@example.ru", "", provider="mailru")
+        store.add("other@example.org", "", provider="mailru")
     assert store.remove(mb.id) is True
     assert store.list() == []
 
@@ -351,7 +355,7 @@ def test_unread_counts_today_and_peek_preview(settings) -> None:
     registry_mailbox(settings)
     messages = [
         raw_mail("Старый запрос", "Письмо без ответа.", date="Mon, 07 Dec 2020 09:00:00 +0300"),
-        raw_mail("Срочно: согласование", "Нужен ответ сегодня.", date="Thu, 27 Nov 2026 08:30:00 +0300"),
+        raw_mail("Срочно: согласование", "Нужен ответ сегодня.", date=_today_stamp()),
     ]
     ch = registry_channels(settings, messages, unseen={"1", "2"})
     label = next(iter(ch.accounts))
@@ -402,7 +406,7 @@ def test_overview_shows_unread_without_secrets(settings) -> None:
     mb = registry_mailbox(settings)
     messages = [
         raw_mail("Старый запрос", "Письмо без ответа.", date="Mon, 07 Dec 2020 09:00:00 +0300"),
-        raw_mail("Срочно: согласование", "Нужен ответ сегодня.", date="Thu, 27 Nov 2026 08:30:00 +0300"),
+        raw_mail("Срочно: согласование", "Нужен ответ сегодня.", date=_today_stamp()),
     ]
     ch = registry_channels(settings, messages, unseen={"1", "2"})
     data = mailboxes_overview(settings, with_unread=True, channels=ch)
@@ -442,14 +446,14 @@ def test_api_mailbox_add_list_delete(settings, monkeypatch) -> None:
     monkeypatch.setattr(api, "_mailbox_login_check", lambda mb_id: {"ok": False, "detail": "нет сети в тесте"})
     added = api.mailbox_add(
         api.MailboxRequest(
-            address="Manager@Example.com",
+            address="Lead@Example.com",
             password="app-password",
             provider="gmail",
             from_name="Руководитель",
         )
     )
     assert added["ok"] is True
-    assert added["mailbox"]["address"] == "manager@example.com"
+    assert added["mailbox"]["address"] == "lead@example.com"
     assert added["mailbox"]["password_set"] is True
     listed = api.mailboxes()
     payload = json.dumps(listed, ensure_ascii=False)
@@ -473,8 +477,8 @@ def test_login_hint_explains_app_password() -> None:
     hint = _imap_login_hint(gmail, RuntimeError("b'[AUTHENTICATIONFAILED] Invalid credentials (Failure)'"))
     assert "Gmail" in hint and "пароль приложения" in hint
     mail = MailAccount(
-        label="m", address="a@example.ru", imap_host="imap.mail.ru", imap_port=993,
-        smtp_host="smtp.mail.ru", smtp_port=465, user="a@example.ru",
+        label="m", address="a@example.org", imap_host="imap.mail.ru", imap_port=993,
+        smtp_host="smtp.mail.ru", smtp_port=465, user="a@example.org",
     )
     hint = _imap_login_hint(mail, RuntimeError("NEOBHODIM parol prilozheniya"))
     assert "Mail.ru" in hint and "внешних приложений" in hint
@@ -482,7 +486,7 @@ def test_login_hint_explains_app_password() -> None:
 
 def test_mailbox_password_can_be_replaced(settings) -> None:
     store = MailboxStore(settings.db_path.parent / "mailboxes.json")
-    mb = store.add("Manager@Example.com", "old-secret", provider="gmail")
+    mb = store.add("lead@example.com", "old-secret", provider="gmail")
     with pytest.raises(MailboxError):
         store.update_password(mb.id, "   ")
     updated = store.update_password(mb.id, "new-app-secret")
@@ -497,7 +501,7 @@ def test_api_mailbox_password_update(settings, monkeypatch) -> None:
     monkeypatch.setattr(api, "settings", settings)
     monkeypatch.setattr(api, "_mailbox_login_check", lambda mb_id: {"ok": False, "detail": "Gmail не принял пароль"})
     added = api.mailbox_add(
-        api.MailboxRequest(address="manager@example.com", password="old", provider="gmail")
+        api.MailboxRequest(address="lead@example.com", password="old", provider="gmail")
     )
     assert added["check"]["ok"] is False
     mb_id = added["mailbox"]["id"]

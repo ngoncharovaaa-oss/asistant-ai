@@ -7,6 +7,7 @@ import io
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
@@ -143,6 +144,7 @@ class StepStateRequest(BaseModel):
 
 class SayRequest(BaseModel):
     text: str = Field(min_length=1, max_length=voice.MAX_CHARS)
+    employee: str = Field(default="", max_length=120)
 
 
 class MeetingDoneRequest(BaseModel):
@@ -150,6 +152,7 @@ class MeetingDoneRequest(BaseModel):
     seconds: int = Field(default=0, ge=0, le=4 * 3600)
     covered: list[int] = Field(default_factory=list, max_length=20)
     channel: str = Field(default="", max_length=20)
+    employee: str = Field(default="", max_length=120)
 
 
 class MeetingJoinRequest(BaseModel):
@@ -1142,7 +1145,7 @@ def journal_view(limit: int = 50) -> dict:
         journal.close()
 
 
-def _meeting_payload() -> dict:
+def _meeting_payload(employee: str = "") -> dict:
     journal = _journal()
     try:
         run_id = journal.last_run()
@@ -1153,6 +1156,29 @@ def _meeting_payload() -> dict:
         progress = journal.protocol_progress(run_id)
     finally:
         journal.close()
+    attendee = None
+    messages: list[dict] = []
+    draft: dict = {}
+    who = employee.strip()
+    if who:
+        store = _chat_store()
+        try:
+            threads = store.threads("all").get("threads") or []
+            person = next((item for item in threads if str(item.get("employee") or "") == who), None)
+            if person is None:
+                raise HTTPException(status_code=400, detail="meeting: employee not found")
+            thread = store.thread(who, "all", limit=200)
+        except ChatError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from None
+        finally:
+            store.close()
+        attendee = {
+            "name": who,
+            "position": str(person.get("position") or ""),
+            "role": str(person.get("role") or ""),
+        }
+        messages = thread.get("messages") or []
+        draft = thread.get("draft") or {}
     digest = _read_json(settings.out_dir / "weekly_digest.json")
     payload = build_meeting(
         metrics=metrics,
@@ -1161,6 +1187,9 @@ def _meeting_payload() -> dict:
         digest=digest,
         profile=str(metrics.get("profile_name") or ""),
         role=str(metrics.get("profile_role") or ""),
+        employee=attendee,
+        chat_messages=messages,
+        chat_draft=draft,
     )
     channels = channels_status(settings)
     zoom = channels.get("zoom", {})
@@ -1179,13 +1208,13 @@ def _meeting_payload() -> dict:
 
 
 @app.get("/api/meeting")
-def meeting_view() -> dict:
-    return _meeting_payload()
+def meeting_view(employee: str = "") -> dict:
+    return _meeting_payload(employee)
 
 
 @app.post("/api/avatar/say")
 def avatar_say(payload: SayRequest) -> Response:
-    meeting = _meeting_payload()
+    meeting = _meeting_payload(payload.employee)
     allowed = {meeting["intro"], meeting["outro"]} | {item["say"] for item in meeting["items"]}
     text = voice.clean(payload.text)
     if text not in allowed:
@@ -1203,12 +1232,13 @@ def avatar_say(payload: SayRequest) -> Response:
 
 @app.post("/api/meeting/done")
 def meeting_done(payload: MeetingDoneRequest) -> dict:
-    meeting = _meeting_payload()
+    meeting = _meeting_payload(payload.employee)
     agenda = meeting.get("items") or []
     covered = {index for index in payload.covered if 0 <= index < len(agenda)}
     if not covered and payload.items:
         covered = set(range(min(payload.items, len(agenda))))
     channel = payload.channel if payload.channel in {"zoom", "telemost"} else ""
+    attendee = meeting.get("attendee") or {}
     finished = datetime.now()
     started = finished - timedelta(seconds=payload.seconds)
     minute = {
@@ -1217,6 +1247,8 @@ def meeting_done(payload: MeetingDoneRequest) -> dict:
         "seconds": payload.seconds,
         "profile": meeting.get("profile", ""),
         "role": meeting.get("role", ""),
+        "employee": str(attendee.get("name") or ""),
+        "employee_position": str(attendee.get("position") or ""),
         "week": meeting.get("week", ""),
         "subtitle": meeting.get("subtitle", ""),
         "channel": channel,
@@ -1391,6 +1423,45 @@ def zoom_open(request: Request) -> Response:
     if not link:
         raise HTTPException(status_code=404, detail="zoom room not configured")
     return RedirectResponse(link, status_code=307)
+
+
+def _zoom_app_link(url: str) -> str:
+    parts = urlsplit(str(url or "").strip())
+    if not parts.scheme.startswith("http") or "zoom" not in parts.netloc.lower():
+        return ""
+    segments = [segment for segment in parts.path.split("/") if segment]
+    confno = ""
+    if "j" in segments:
+        index = segments.index("j")
+        if index + 1 < len(segments):
+            confno = segments[index + 1]
+    elif "wc" in segments:
+        rest = [segment for segment in segments[segments.index("wc") + 1:] if segment != "join"]
+        if rest:
+            confno = rest[-1]
+    if not confno.isdigit():
+        return ""
+    query = {"action": "join", "confno": confno}
+    pwd = (parse_qs(parts.query).get("pwd") or [""])[0]
+    if pwd:
+        query["pwd"] = pwd
+    return "zoommtg://zoom.us/join?" + urlencode(query)
+
+
+@app.get("/api/zoom/app")
+def zoom_app(request: Request) -> Response:
+    if not _local_request(request):
+        raise HTTPException(status_code=404, detail="not found")
+    link = load_zoom(settings).personal_link or ""
+    deep = _zoom_app_link(link)
+    if not deep:
+        raise HTTPException(status_code=404, detail="zoom app link unavailable")
+    journal = _journal()
+    try:
+        journal.log("meeting_join", {"provider": "zoom", "saved": True, "app": True})
+    finally:
+        journal.close()
+    return RedirectResponse(deep, status_code=307)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -1749,6 +1820,8 @@ HTML_PAGE = r"""<!doctype html>
   .mtg-brand span{display:block;color:#C9AF96;font-size:12px;margin-top:2px}
   .mtg-bar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .mtg-timer{font:600 15px/1 Consolas,monospace;color:#E9D3BA;background:rgba(255,248,239,.08);border:1px solid rgba(233,211,186,.22);padding:8px 12px;border-radius:999px}
+  .mtg-who{max-width:240px;background:rgba(255,248,239,.08);border:1px solid rgba(233,211,186,.22);color:#E9D3BA;border-radius:999px;padding:8px 10px;font:500 12.5px/1.1 -apple-system,"Segoe UI",sans-serif}
+  .mtg-who option{color:#3E2A20}
   .mtg-bar .btn,.mtg-controls .btn{border-color:rgba(233,211,186,.34);color:#F0DEC9}
   .mtg-bar .btn:hover,.mtg-controls .btn:hover{background:rgba(240,222,201,.1)}
   .mtg-bar .btn.primary,.mtg-controls .btn.primary{border-color:transparent;color:#FFF8EF}
@@ -1764,6 +1837,7 @@ HTML_PAGE = r"""<!doctype html>
   .mtg-pip{position:absolute;top:14px;right:14px;width:118px;height:158px;border-radius:14px;overflow:hidden;
     border:1px solid rgba(233,211,186,.5);box-shadow:0 12px 30px rgba(0,0,0,.35);background:#2A1810}
   .mtg-pip img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block}
+  .mtg-pip-ini{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,#B4552D,#7C3A1E);color:#FFF8EF;font:600 34px/1 Georgia,serif;letter-spacing:.03em}
   .mtg-pip span{position:absolute;left:0;right:0;bottom:0;padding:4px 8px;background:rgba(32,19,13,.74);
     color:#F7EBDD;font:600 10.5px/1.3 -apple-system,"Segoe UI",sans-serif;letter-spacing:.02em}
   .mtg-badge{position:absolute;left:16px;bottom:14px;display:flex;align-items:center;gap:9px;
@@ -2391,6 +2465,7 @@ HTML_PAGE = r"""<!doctype html>
       <div><b>Ася ведёт встречу</b><span id="mtgSub">Планёрка</span></div>
     </div>
     <div class="mtg-bar-right">
+      <select class="mtg-who" id="mtgWho" title="С кем провести встречу"><option value="">Руководитель</option></select>
       <span class="mtg-timer" id="mtgTimer">00:00</span>
       <button class="btn ghost" id="mtgMinutesBtn" type="button">Протокол</button>
       <button class="btn ghost" id="mtgZoom" type="button">Подключиться</button>
@@ -2403,8 +2478,9 @@ HTML_PAGE = r"""<!doctype html>
         <img class="mtg-photo" id="mtgPhoto" src="/assets/asya.jpg?v=2" alt="Ася — живой аватар" draggable="false">
         <div class="mtg-rim" id="mtgRim" aria-hidden="true"></div>
         <div class="mtg-pip">
-          <img src="/assets/ivan-avatar.png?v=2" alt="Иван Петров">
-          <span>Иван · руководитель</span>
+          <img id="mtgPipImg" src="/assets/ivan-avatar.png?v=2" alt="Иван Петров">
+          <div class="mtg-pip-ini" id="mtgPipIni" hidden></div>
+          <span id="mtgPipName">Иван · руководитель</span>
         </div>
         <div class="mtg-badge"><i></i><b>Ася</b><span>AsiStantAI · ведущая</span></div>
         <div class="mtg-wave" id="mtgWave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -2428,6 +2504,7 @@ HTML_PAGE = r"""<!doctype html>
           <button class="btn ghost" id="mtgZoomJoin" type="button">Войти</button>
         </div>
         <p class="mini" id="mtgZoomNote">Ссылка не сохранена: вставьте и нажмите «Войти».</p>
+        <a class="mini" id="mtgZoomWeb" href="/api/join/zoom" target="_blank" rel="noopener" hidden>Zoom не открылся — войти в браузере</a>
         <label for="mtgTmLink">Телемост</label>
         <div class="mtg-join-row">
           <input id="mtgTmLink" placeholder="https://telemost.yandex.ru/j/…" autocomplete="off">
@@ -3664,7 +3741,7 @@ const MTG = {
   data: null, items: [], step: -2, token: 0, mode: 'idle', ctx: null,
   source: null, buffer: null, offset: 0, startedAtCtx: 0, onDone: null, safety: 0,
   analyser: null, raf: 0, timer: 0, startedAt: 0, fake: false,
-  covered: new Set(), channel: ''
+  covered: new Set(), channel: '', employee: '', people: null
 };
 function mtgCaption(text) {
   $('mtgCaption').textContent = text;
@@ -3833,7 +3910,7 @@ async function speakStep(step) {
     const res = await fetch('/api/avatar/say', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({text: line})
+      body: JSON.stringify({text: line, employee: MTG.employee || ''})
     });
     if (!res.ok) throw new Error('tts');
     const blob = await res.blob();
@@ -3939,9 +4016,11 @@ function stopMtgLoop() {
   $('mtgPhoto').style.transform = 'none';
   for (const bar of $('mtgWave').children) bar.style.height = '5px';
 }
-async function openMeeting() {
+async function openMeeting(employee) {
+  MTG.employee = typeof employee === 'string' ? employee : '';
+  const query = MTG.employee ? '?employee=' + encodeURIComponent(MTG.employee) : '';
   try {
-    MTG.data = await api('/api/meeting');
+    MTG.data = await api('/api/meeting' + query);
   } catch (err) {
     toast('Встреча: ' + err.message);
     return;
@@ -3963,7 +4042,11 @@ async function openMeeting() {
   $('mtgZoomLink').value = '';
   $('mtgTmLink').value = '';
   updateMtgJoinNotes();
-  mtgCaption('Нажмите «Начать встречу» — Ася поприветствует вас голосом и проведёт по повестке.');
+  updateMtgPip();
+  fillMtgWho();
+  mtgCaption(MTG.employee
+    ? 'Нажмите «Начать встречу» — Ася поздоровается с сотрудником голосом и проведёт встречу по вопросам из переписки.'
+    : 'Нажмите «Начать встречу» — Ася поприветствует вас голосом и проведёт по повестке.');
   renderMtgAgenda();
   mtgLoop();
 }
@@ -3976,14 +4059,65 @@ function updateMtgJoinNotes() {
     const info = data[provider] || {};
     const name = provider === 'zoom' ? 'Zoom' : 'Телемост';
     let text;
-    if (info.link_set && mtgIsLocal()) text = 'Комната ' + name + ' сохранена: «Войти» откроет её без ввода.';
-    else if (info.link_set) text = 'Комната ' + name + ' сохранена. На стенде адрес не раскрывается — вставьте ссылку, чтобы открыть встречу здесь.';
+    if (info.link_set && mtgIsLocal()) {
+      text = provider === 'zoom'
+        ? 'Комната Zoom сохранена: «Подключиться» откроет приложение Zoom на этом ПК.'
+        : 'Комната Телемоста сохранена: «Войти» откроет её без ввода.';
+    } else if (info.link_set) text = 'Комната ' + name + ' сохранена. На стенде адрес не раскрывается — вставьте ссылку, чтобы открыть встречу здесь.';
     else text = 'Ссылка ' + name + ' не сохранена: вставьте и нажмите «Войти».';
     if (MTG.channel === provider) text += ' Встреча идёт здесь.';
     $(nodeId).textContent = text;
   };
   note('zoom', 'mtgZoomNote');
   note('telemost', 'mtgTmNote');
+  const web = $('mtgZoomWeb');
+  if (web) web.hidden = !((data.zoom || {}).link_set && mtgIsLocal());
+}
+function updateMtgPip() {
+  const attendee = MTG.data && MTG.data.attendee;
+  const img = $('mtgPipImg');
+  const initials = $('mtgPipIni');
+  const name = $('mtgPipName');
+  if (!img || !initials || !name) return;
+  if (attendee && attendee.name) {
+    img.hidden = true;
+    initials.hidden = false;
+    initials.textContent = attendee.name.split(/\s+/).map((word) => word[0] || '').join('').slice(0, 2).toUpperCase();
+    const position = attendee.position || attendee.role || 'сотрудник';
+    name.textContent = attendee.name.split(/\s+/)[0] + ' · ' + position.charAt(0).toLowerCase() + position.slice(1);
+  } else {
+    img.hidden = false;
+    initials.hidden = true;
+    const leader = (MTG.data && MTG.data.profile ? MTG.data.profile.split(/\s+/)[0] : 'Иван');
+    name.textContent = leader + ' · руководитель';
+  }
+}
+async function fillMtgWho() {
+  const select = $('mtgWho');
+  if (!select) return;
+  const leader = (MTG.data && MTG.data.profile) || 'Руководитель';
+  const current = MTG.employee || '';
+  select.innerHTML = '';
+  const own = document.createElement('option');
+  own.value = '';
+  own.textContent = leader + ' · руководитель';
+  select.appendChild(own);
+  if (!MTG.people) {
+    try {
+      const data = await api('/api/chat?period=today');
+      MTG.people = data.employees || [];
+    } catch (err) {
+      MTG.people = [];
+    }
+  }
+  for (const person of MTG.people) {
+    if (!person || person.name === leader) continue;
+    const option = document.createElement('option');
+    option.value = person.name;
+    option.textContent = person.name + (person.position ? ' · ' + person.position : '');
+    select.appendChild(option);
+  }
+  select.value = current;
 }
 function joinChannel(provider, inputId) {
   const input = inputId ? $(inputId) : null;
@@ -3992,10 +4126,10 @@ function joinChannel(provider, inputId) {
   const info = (MTG.data && MTG.data[provider]) || {};
   if (!link) {
     if (info.link_set && mtgIsLocal()) {
-      window.open('/api/join/' + provider, '_blank', 'noopener');
+      window.open(provider === 'zoom' ? '/api/zoom/app' : '/api/join/' + provider, '_blank', 'noopener');
       MTG.channel = provider;
       updateMtgJoinNotes();
-      toast('Открываю сохранённую комнату ' + name);
+      toast(provider === 'zoom' ? 'Открываю Zoom на этом компьютере' : 'Открываю сохранённую комнату ' + name);
       return;
     }
     toast(info.link_set
@@ -4046,7 +4180,7 @@ function closeMeeting() {
   api('/api/meeting/done', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({items: covered.length, seconds: seconds, covered: covered, channel: channel})
+    body: JSON.stringify({items: covered.length, seconds: seconds, covered: covered, channel: channel, employee: MTG.employee || ''})
   }).then((data) => {
     toast('Встреча завершена: ' + minuteDuration(seconds) + ' · освещено ' + covered.length + ' из ' + MTG.items.length);
     openMinutes(data.id);
@@ -4060,10 +4194,10 @@ function openMeetingZoom() {
   const saved = ['zoom', 'telemost'].filter((provider) => data[provider] && data[provider].link_set);
   if (saved.length && mtgIsLocal()) {
     const provider = saved[0];
-    window.open('/api/join/' + provider, '_blank', 'noopener');
+    window.open(provider === 'zoom' ? '/api/zoom/app' : '/api/join/' + provider, '_blank', 'noopener');
     MTG.channel = provider;
     updateMtgJoinNotes();
-    toast('Открываю комнату ' + (provider === 'zoom' ? 'Zoom' : 'Телемоста'));
+    toast(provider === 'zoom' ? 'Открываю Zoom на этом компьютере — комната сохранена' : 'Открываю комнату Телемоста');
     return;
   }
   $('mtgZoomLink').focus();
@@ -4242,6 +4376,8 @@ function renderMinute(minute) {
   const meta = el('div', 'min-meta');
   meta.appendChild(el('span', null, 'Ведущая: Ася · AsiStantAI'));
   if (minute.profile) meta.appendChild(el('span', null, 'Руководитель: ' + minute.profile));
+  if (minute.employee) meta.appendChild(el('span', null, 'Сотрудник: ' + minute.employee +
+    (minute.employee_position ? ', ' + minute.employee_position : '')));
   if (minute.week) meta.appendChild(el('span', null, minute.week));
   meta.appendChild(el('span', null, 'Освещено: ' + covered + ' из ' + items.length));
   body.appendChild(meta);
@@ -5075,8 +5211,13 @@ $('chatSendBtn').onclick = chatSend;
 $('calendarLogin').onclick = openCalendar;
 $('calClose').onclick = closeCalendar;
 $('meetClose').onclick = closeCalMeeting;
-$('meetBtn').onclick = openMeeting;
-$('zoomMeetBtn').onclick = openMeeting;
+$('meetBtn').onclick = () => openMeeting($('mtgWho').value || '');
+$('zoomMeetBtn').onclick = () => openMeeting($('mtgWho').value || '');
+$('mtgWho').onchange = () => {
+  const who = $('mtgWho').value;
+  openMeeting(who);
+  toast(who ? 'Встреча перестроена: ' + who : 'Встреча с руководителем');
+};
 $('mtgPlay').onclick = mtgToggle;
 $('mtgNext').onclick = mtgNextStep;
 $('mtgZoom').onclick = openMeetingZoom;

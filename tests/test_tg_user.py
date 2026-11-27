@@ -39,7 +39,7 @@ class FakeClient:
 
     async def get_me(self):
         self.calls.append("get_me")
-        return SimpleNamespace(username="demo_leader", first_name="Иван", last_name="Волков")
+        return SimpleNamespace(username="team_lead", first_name="Анна", last_name="Примерова")
 
     async def get_dialogs(self, limit: int = 200):
         self.calls.append(f"get_dialogs:{limit}")

@@ -67,6 +67,112 @@ def _topics(digest: dict[str, Any]) -> str:
     return ", ".join(said[:-1]) + " и " + said[-1]
 
 
+def _lower_first(text: str) -> str:
+    return text[:1].lower() + text[1:] if text else text
+
+
+def _employee_meeting(
+    *,
+    employee: dict[str, Any],
+    messages: list[dict[str, Any]],
+    draft: dict[str, Any],
+    week: str,
+    profile: str,
+    role: str,
+) -> dict[str, Any]:
+    name = str(employee.get("name") or "").strip()
+    first = name.split()[0] if name else "коллега"
+    position = str(employee.get("position") or "").strip()
+    person_role = str(employee.get("role") or "").strip()
+    incoming = [m for m in messages if str(m.get("direction") or "") == "in"]
+    unread = sum(1 for m in incoming if not m.get("read"))
+    latest = str((incoming[-1].get("text") if incoming else "") or "").strip()
+    previous = str((incoming[-2].get("text") if len(incoming) > 1 else "") or "").strip()
+
+    intro = (
+        f"Добрый день, {first}. Я Ася, ИИ-помощник руководителя. "
+        f"Провожу встречу с вами по вопросам, которые вы прислали, и договорённостям на неделю {week}. "
+        "Коротко: что требует решения, что я подготовила и что зафиксирую в протоколе."
+    )
+
+    if latest:
+        questions_say = f"Вопросы. {first}, вы пишете: «{latest}»."
+        if previous:
+            questions_say += f" Ранее: «{previous}»."
+        questions_say += " Разберём по порядку и зафиксируем решение."
+    else:
+        questions_say = (
+            f"Вопросы. {first}, новых сообщений от вас нет — "
+            "разберём текущие задачи и планы на неделю."
+        )
+
+    reply = str(draft.get("reply") or "").strip()
+    reason = str(draft.get("reason") or "").strip()
+    if reply:
+        answer_say = f"Ответ. Я подготовила черновик: «{reply}»."
+        if reason:
+            answer_say += f" Основание: {_lower_first(reason)}"
+        answer_say += " Отправка только после утверждения руководителем, автоотправок ноль."
+        answer_fact = "черновик готов · отправка вручную"
+    else:
+        answer_say = (
+            "Ответ. Черновик подготовлю по итогам встречи — "
+            "после того как руководитель утвердит решение."
+        )
+        answer_fact = "ответ ждёт решения"
+
+    items = [
+        {
+            "id": "questions",
+            "title": "Вопросы из переписки",
+            "fact": f"{len(incoming)} входящих · {unread} без ответа",
+            "say": questions_say,
+        },
+        {
+            "id": "answer",
+            "title": "Ответ и решение",
+            "fact": answer_fact,
+            "say": answer_say,
+        },
+        {
+            "id": "agreements",
+            "title": "Договорённости",
+            "fact": "протокол · задачи",
+            "say": (
+                "Договорённости. Зафиксирую итог встречи в протоколе; "
+                f"задачи поставим на {name} и срок, который назовёте. "
+                "Протокол сохранится после завершения встречи."
+            ),
+        },
+    ]
+
+    outro = (
+        f"На этом у меня всё, {first}. Сохраню протокол встречи и передам договорённости. "
+        "Хорошего дня!"
+    )
+
+    lines = [intro] + [item["say"] for item in items] + [outro]
+    seconds = int(sum(len(line) for line in lines) / 14)
+
+    subtitle = "Встреча · " + (name or "сотрудник")
+    if position:
+        subtitle += " · " + position
+    subtitle += " · " + week
+
+    return {
+        "kind": "employee",
+        "profile": profile,
+        "role": role,
+        "attendee": {"name": name, "position": position, "role": person_role},
+        "week": week,
+        "subtitle": subtitle,
+        "intro": intro,
+        "outro": outro,
+        "items": items,
+        "estimated_seconds": seconds,
+    }
+
+
 def build_meeting(
     *,
     metrics: dict[str, Any] | None = None,
@@ -75,6 +181,9 @@ def build_meeting(
     digest: dict[str, Any] | None = None,
     profile: str = "",
     role: str = "",
+    employee: dict[str, Any] | None = None,
+    chat_messages: list[dict[str, Any]] | None = None,
+    chat_draft: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     metrics = metrics or {}
     digest = digest or {}
@@ -112,6 +221,15 @@ def build_meeting(
         payback = "—"
 
     week = _week_label(str(digest.get("week_start") or ""), str(digest.get("week_end") or ""))
+    if employee:
+        return _employee_meeting(
+            employee=employee,
+            messages=chat_messages or [],
+            draft=chat_draft or {},
+            week=week,
+            profile=profile,
+            role=role,
+        )
     topics = _topics(digest)
     greeting = "Добрый день"
     if profile and profile.split():
@@ -253,13 +371,17 @@ def minutes_markdown(minute: dict[str, Any]) -> str:
     role = str(minute.get("role") or "").strip()
     leader = profile + (f", {role}" if role else "") if profile else "—"
     channel = CHANNEL_LABELS.get(str(minute.get("channel") or ""), "экран Аси")
+    attendee = str(minute.get("employee") or "").strip()
 
     lines = [
-        "# Протокол планёрки",
+        "# Протокол встречи" if attendee else "# Протокол планёрки",
         "",
         f"**Когда:** {_stamp(minute.get('started_at', ''))} · **Длительность:** {_duration(minute.get('seconds', 0))}",
         f"**Ведущая:** Ася, AsiStantAI · **Руководитель:** {leader}",
     ]
+    if attendee:
+        position = str(minute.get("employee_position") or "").strip()
+        lines.append(f"**Сотрудник:** {attendee}" + (f", {position}" if position else ""))
     if minute.get("week"):
         lines.append(f"**Неделя:** {minute['week']}")
     lines.append(f"**Канал:** {channel}")
