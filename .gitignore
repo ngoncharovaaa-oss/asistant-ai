@@ -2,6 +2,9 @@
 .env
 .env.*
 !.env.example
+*.session
+*.session-journal
+data/telegram_user.json
 
 # Python
 __pycache__/
@@ -18,6 +21,11 @@ data/*.db
 data/*.sqlite
 data/*.sqlite3
 data/llm_cache.json
+data/mailboxes.json
+data/rooms.json
+data/zoom_oauth.json
+mailboxes.json
+mailboxes.tmp
 
 # Результаты прогонов
 out/
@@ -31,3 +39,9 @@ tmp/
 Thumbs.db
 .idea/
 .vscode/
+
+# Голосовой кэш и резервные копии
+data/voice/
+Temp/
+*.bak
+*.bak-*

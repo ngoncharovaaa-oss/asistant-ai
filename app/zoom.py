@@ -1,21 +1,34 @@
 # -*- coding: utf-8 -*-
-"""Zoom: ссылки на встречи. Секреты читаются только из .env.
+"""Zoom: вход через приложение Marketplace и ссылки на встречи.
 
-Два режима: API (Server-to-Server OAuth, создаёт новую встречу) и постоянная
-ссылка ZOOM_PERSONAL_LINK (без сети). Наружу не отдаются ключи и хост-ссылка
-start_url: только join_url для участников.
+Три режима без пароля Zoom-аккаунта:
+* login — пользователь один раз входит на стороне Zoom (OAuth authorization
+  code): приложение получает токен, встречи создаются от его имени;
+* api — Server-to-Server OAuth (Account ID + Client ID + Secret);
+* link — постоянная ссылка на комнату, без сети.
+
+Секреты живут только в .env и data/zoom_oauth.json (0600, в git не попадает).
+Наружу отдаются join_url и факт входа, но никогда start_url и токены.
 """
 from __future__ import annotations
 
 import base64
 import json
+import os
+import secrets
+import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, Callable
 
 from .config import Settings
+from .links import saved as saved_link
+
+AUTHORIZE_URL = "https://zoom.us/oauth/authorize"
+TOKEN_URL = "https://zoom.us/oauth/token"
 
 
 class ZoomError(RuntimeError):
@@ -29,17 +42,30 @@ class ZoomConfig:
     client_secret: str = field(default="", repr=False)
     user_id: str = "me"
     personal_link: str = ""
+    redirect_uri: str = ""
+    oauth: dict[str, Any] = field(default_factory=dict, repr=False)
+    oauth_file: Path | None = field(default=None, repr=False)
+
+    @property
+    def client_ready(self) -> bool:
+        return bool(self.client_id and self.client_secret)
 
     @property
     def api_mode(self) -> bool:
         return bool(self.account_id and self.client_id and self.client_secret)
 
     @property
+    def logged_in(self) -> bool:
+        return bool(self.oauth.get("access_token"))
+
+    @property
     def configured(self) -> bool:
-        return self.api_mode or bool(self.personal_link)
+        return self.logged_in or self.api_mode or bool(self.personal_link)
 
     @property
     def mode(self) -> str:
+        if self.logged_in:
+            return "login"
         if self.api_mode:
             return "api"
         if self.personal_link:
@@ -52,7 +78,35 @@ class ZoomConfig:
             "configured": self.configured,
             "mode": self.mode,
             "link_set": bool(self.personal_link),
+            "logged_in": self.logged_in,
+            "name": str(self.oauth.get("name") or ""),
         }
+
+
+def oauth_path(settings: Settings) -> Path:
+    return settings.db_path.parent / "zoom_oauth.json"
+
+
+def load_oauth(settings: Settings) -> dict[str, Any]:
+    file = oauth_path(settings)
+    if not file.exists():
+        return {}
+    try:
+        data = json.loads(file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_oauth(settings: Settings, data: dict[str, Any]) -> None:
+    save_oauth_file(oauth_path(settings), data)
+
+
+def clear_oauth(settings: Settings) -> None:
+    try:
+        oauth_path(settings).unlink()
+    except FileNotFoundError:
+        pass
 
 
 def load_zoom(settings: Settings) -> ZoomConfig:
@@ -62,8 +116,38 @@ def load_zoom(settings: Settings) -> ZoomConfig:
         client_id=env.get("ZOOM_CLIENT_ID", "").strip(),
         client_secret=env.get("ZOOM_CLIENT_SECRET", "").strip(),
         user_id=env.get("ZOOM_USER_ID", "").strip() or "me",
-        personal_link=env.get("ZOOM_PERSONAL_LINK", "").strip(),
+        personal_link=env.get("ZOOM_PERSONAL_LINK", "").strip() or saved_link(settings, "zoom"),
+        redirect_uri=env.get("ZOOM_REDIRECT_URI", "").strip(),
+        oauth=load_oauth(settings),
+        oauth_file=oauth_path(settings),
     )
+
+
+_pending: dict[str, float] = {}
+
+
+def authorize_url(config: ZoomConfig) -> str:
+    if not (config.client_id and config.redirect_uri):
+        raise ZoomError("zoom: oauth app is not configured")
+    now = time.time()
+    for key in [key for key, until in _pending.items() if until < now]:
+        _pending.pop(key, None)
+    state = secrets.token_urlsafe(16)
+    _pending[state] = now + 600
+    query = urllib.parse.urlencode(
+        {
+            "response_type": "code",
+            "client_id": config.client_id,
+            "redirect_uri": config.redirect_uri,
+            "state": state,
+        }
+    )
+    return AUTHORIZE_URL + "?" + query
+
+
+def check_state(state: str) -> bool:
+    until = _pending.pop(state or "", 0.0)
+    return bool(until) and time.time() <= until
 
 
 def _start(value: str) -> str:
@@ -84,17 +168,12 @@ class ZoomClient:
         self._access = ""
         self._access_until = datetime.min
 
-    def _token(self) -> str:
-        if self._access and datetime.now() < self._access_until:
-            return self._access
+    def _oauth_token(self, params: dict[str, str]) -> dict[str, Any]:
         basic = base64.b64encode(
             f"{self.config.client_id}:{self.config.client_secret}".encode("utf-8")
         ).decode("ascii")
-        query = urllib.parse.urlencode(
-            {"grant_type": "account_credentials", "account_id": self.config.account_id}
-        )
         request = urllib.request.Request(
-            "https://zoom.us/oauth/token?" + query,
+            TOKEN_URL + "?" + urllib.parse.urlencode(params),
             data=b"",
             method="POST",
             headers={"Authorization": "Basic " + basic},
@@ -104,7 +183,51 @@ class ZoomClient:
                 body = json.loads(response.read().decode("utf-8"))
         except Exception:
             raise ZoomError("zoom: token request failed") from None
-        token = body.get("access_token")
+        if not isinstance(body, dict):
+            raise ZoomError("zoom: bad token response")
+        return body
+
+    def _store(self, body: dict[str, Any]) -> None:
+        token = str(body.get("access_token") or "")
+        if not token:
+            raise ZoomError("zoom: token missing")
+        try:
+            expires = int(body.get("expires_in", 3600))
+        except (TypeError, ValueError):
+            expires = 3600
+        data = {
+            "access_token": token,
+            "refresh_token": str(body.get("refresh_token") or self.config.oauth.get("refresh_token") or ""),
+            "expires_at": datetime.now().timestamp() + max(expires - 60, 60),
+            "name": str(self.config.oauth.get("name") or ""),
+        }
+        self.config.oauth = data
+        if self.config.oauth_file:
+            save_oauth_file(self.config.oauth_file, data)
+
+    def _refresh(self) -> str:
+        refresh = str(self.config.oauth.get("refresh_token") or "")
+        if not refresh or not self.config.client_ready:
+            raise ZoomError("zoom: session expired, log in again")
+        body = self._oauth_token({"grant_type": "refresh_token", "refresh_token": refresh})
+        self._store(body)
+        return str(self.config.oauth["access_token"])
+
+    def _token(self) -> str:
+        if self.config.logged_in:
+            token = str(self.config.oauth.get("access_token") or "")
+            expires = float(self.config.oauth.get("expires_at") or 0)
+            if token and (not expires or datetime.now().timestamp() < expires - 60):
+                return token
+            return self._refresh()
+        if self._access and datetime.now() < self._access_until:
+            return self._access
+        if not self.config.api_mode:
+            raise ZoomError("zoom: not configured")
+        body = self._oauth_token(
+            {"grant_type": "account_credentials", "account_id": self.config.account_id}
+        )
+        token = str(body.get("access_token") or "")
         if not token:
             raise ZoomError("zoom: token missing")
         self._access = token
@@ -136,16 +259,55 @@ class ZoomClient:
         except json.JSONDecodeError:
             raise ZoomError("zoom: bad api response") from None
 
+    def login(self, code: str) -> dict[str, Any]:
+        if not self.config.redirect_uri:
+            raise ZoomError("zoom: redirect uri is not configured")
+        body = self._oauth_token(
+            {
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": self.config.redirect_uri,
+            }
+        )
+        self._store(body)
+        name = ""
+        try:
+            me = self._call("GET", "/users/me")
+            name = str(me.get("display_name") or me.get("first_name") or "")
+        except ZoomError:
+            pass
+        if name:
+            self.config.oauth["name"] = name
+            if self.config.oauth_file:
+                save_oauth_file(self.config.oauth_file, self.config.oauth)
+        return {"name": name, "mode": "login"}
+
+    def logout(self) -> None:
+        self.config.oauth = {}
+        if self.config.oauth_file:
+            try:
+                self.config.oauth_file.unlink()
+            except FileNotFoundError:
+                pass
+
     def check(self) -> dict[str, Any]:
         if not self.config.configured:
             return {"ok": False, "detail": "не настроен"}
         if self.config.mode == "link":
             return {"ok": True, "detail": "постоянная ссылка задана"}
         try:
-            me = self._call("GET", "/users/" + urllib.parse.quote(self.config.user_id))
+            if self.config.logged_in:
+                me = self._call("GET", "/users/me")
+            else:
+                me = self._call("GET", "/users/" + urllib.parse.quote(self.config.user_id))
         except ZoomError as exc:
             return {"ok": False, "detail": str(exc)}
         name = me.get("display_name") or me.get("first_name") or ""
+        if self.config.logged_in:
+            self.config.oauth["name"] = str(name)
+            if name and self.config.oauth_file:
+                save_oauth_file(self.config.oauth_file, self.config.oauth)
+            return {"ok": True, "detail": "вход выполнен" + (f": {name}" if name else "")}
         return {"ok": True, "detail": "доступ к API подтверждён" + (f": {name}" if name else "")}
 
     def create_meeting(
@@ -182,19 +344,31 @@ class ZoomClient:
         if when:
             payload["start_time"] = when
             payload["timezone"] = "Europe/Moscow"
+        user = "me" if self.config.logged_in else self.config.user_id
         data = self._call(
             "POST",
-            "/users/" + urllib.parse.quote(self.config.user_id) + "/meetings",
+            "/users/" + urllib.parse.quote(user) + "/meetings",
             payload,
         )
         join_url = str(data.get("join_url") or "")
         if not join_url:
             raise ZoomError("zoom: meeting created without join link")
         return {
-            "mode": "api",
+            "mode": "login" if self.config.logged_in else "api",
             "topic": topic,
             "id": str(data.get("id") or ""),
             "join_url": join_url,
             "start": when,
             "minutes": duration,
         }
+
+
+def save_oauth_file(file: Path, data: dict[str, Any]) -> None:
+    file.parent.mkdir(parents=True, exist_ok=True)
+    tmp = file.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        os.chmod(tmp, 0o600)
+    except OSError:
+        pass
+    os.replace(tmp, file)

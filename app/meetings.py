@@ -236,10 +236,157 @@ def parse_summary(path: Path, text: str) -> Protocol:
     )
 
 
-def parse_all(meetings_dir: Path) -> list[Protocol]:
+RU_MONTHS = {
+    "января": 1, "февраля": 2, "марта": 3, "апреля": 4, "мая": 5, "июня": 6,
+    "июля": 7, "августа": 8, "сентября": 9, "октября": 10, "ноября": 11, "декабря": 12,
+}
+EMPTY_DEADLINES = {"не назван", "не назван точно", "не названа", "не указан", "—", "-"}
+
+
+def _meta(text: str) -> dict[str, str]:
+    meta: dict[str, str] = {}
+    for raw in text.splitlines():
+        match = re.match(r"^\*\*(.+?):\*\*\s*(.+?)\s*$", raw.strip())
+        if match:
+            meta[match.group(1).strip()] = _clean_markdown(match.group(2))
+    return meta
+
+
+def _ru_date(value: str) -> datetime | None:
+    match = re.search(r"(\d{1,2})\s+([а-яё]+)\s+(\d{4})", value.lower())
+    if match and match.group(2) in RU_MONTHS:
+        return datetime(int(match.group(3)), RU_MONTHS[match.group(2)], int(match.group(1)))
+    match = re.search(r"(\d{2})\.(\d{2})\.(\d{4})", value)
+    if match:
+        return datetime(int(match.group(3)), int(match.group(2)), int(match.group(1)))
+    return None
+
+
+def _section(text: str, keyword: str) -> str:
+    match = re.search(
+        rf"##\s*\d*\.?\s*{keyword}.*?\n(.*?)(?=\n##\s|\Z)", text, re.S | re.IGNORECASE
+    )
+    return match.group(1) if match else ""
+
+
+def _table(block: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for line in block.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if not cells or all(set(cell) <= set("-: ") for cell in cells):
+            continue
+        if cells[0].lower().startswith("№"):
+            continue
+        rows.append(cells)
+    return rows
+
+
+def _task_from_row(cells: list[str]) -> ProtocolTask | None:
+    if len(cells) < 5:
+        return None
+    text = _clean_markdown(cells[1])
+    if not text or text.startswith("[") or "вставить" in text.lower():
+        return None
+    deadline = _clean_markdown(cells[-2])
+    if deadline.lower() in EMPTY_DEADLINES:
+        deadline = ""
+    owner = _clean_markdown(cells[-3])
+    if owner.lower() in {"не назначен", "не назначена", "не назначено", "—", "-"}:
+        owner = ""
+    return ProtocolTask(
+        text=text,
+        owner=owner,
+        deadline=deadline,
+        status_source=_clean_markdown(cells[-1]),
+    )
+
+
+def parse_protocol_doc(path: Path, text: str) -> Protocol:
+    """Разбор полного протокола встречи: шапка, повестка, решения, поручения, риски, шаги."""
+    meta = _meta(text)
+    when = _ru_date(meta.get("Дата", ""))
+    protocol_id = when.strftime("%Y-%m-%d") if when else _protocol_id(path, None)
+    decisions = [
+        _clean_markdown(match) for match in re.findall(r"\*\*Решени[ея]:\*\*\s*(.+)", text)
+    ]
+    decisions = [item for item in decisions if item]
+    tasks = [
+        task
+        for cells in _table(_section(text, "Поручения"))
+        if (task := _task_from_row(cells))
+    ]
+    risks: list[str] = []
+    questions: list[str] = []
+    for cells in _table(_section(text, "Открытые вопросы и риски")):
+        if len(cells) < 3:
+            continue
+        question = _clean_markdown(cells[1])
+        need = _clean_markdown(cells[2])
+        owner = _clean_markdown(cells[3]) if len(cells) > 3 else ""
+        if not question:
+            continue
+        risks.append(question)
+        question_text = f"{question} — требуется: {need}" if need else question
+        if owner:
+            question_text += f" (владелец: {owner})"
+        questions.append(question_text)
+    agenda = [
+        _clean_markdown(match)
+        for match in re.findall(r"^\s*\d+\.\s+(.+)$", _section(text, "Повестка"), re.M)
+    ]
+    next_steps = [
+        _clean_markdown(match)
+        for match in re.findall(r"^\s*-\s*\[[ xX]\]\s*(.+)$", _section(text, "Дальнейшие шаги"), re.M)
+    ]
+    title = meta.get("Тема") or path.stem.replace(" — протокол", "")
+    quote = decisions[0] if decisions else title
+    return Protocol(
+        id=protocol_id,
+        title=title,
+        decisions=decisions,
+        tasks=tasks,
+        open_questions=questions,
+        sources=[
+            Source(kind="meeting_protocol", title=title, quote=quote, ref=f"protocols#{protocol_id}")
+        ],
+        when=when.strftime("%d.%m.%Y") if when else "",
+        host=meta.get("Ведущий") or meta.get("Ведущая") or meta.get("Ведущие") or "",
+        participants=meta.get("Участники", ""),
+        agenda=agenda,
+        risks=risks,
+        next_steps=next_steps,
+        doc_path=str(path),
+    )
+
+
+def load_protocol_docs(protocols_dir: Path | None) -> dict[str, Protocol]:
+    if not protocols_dir or not protocols_dir.exists():
+        return {}
+    docs: dict[str, Protocol] = {}
+    for path in sorted(protocols_dir.glob("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md")):
+        protocol = parse_protocol_doc(path, path.read_text(encoding="utf-8"))
+        docs[protocol.id] = protocol
+    return docs
+
+
+def parse_all(meetings_dir: Path, protocols_dir: Path | None = None) -> list[Protocol]:
     from .datasets import load_meeting_summaries
 
-    return [parse_summary(path, text) for path, text in load_meeting_summaries(meetings_dir)]
+    docs = load_protocol_docs(protocols_dir)
+    protocols: list[Protocol] = []
+    seen: set[str] = set()
+    for path, text in load_meeting_summaries(meetings_dir):
+        summary = parse_summary(path, text)
+        protocol = docs.get(summary.id, summary)
+        protocols.append(protocol)
+        seen.add(protocol.id)
+    for protocol_id, protocol in docs.items():
+        if protocol_id not in seen:
+            protocols.append(protocol)
+    return sorted(protocols, key=lambda item: item.id)
 
 
 def to_markdown(protocol: Protocol, when: datetime | None = None) -> str:
@@ -280,6 +427,9 @@ def write_protocols(protocols: list[Protocol], out_dir: Path) -> list[Protocol]:
         except ValueError:
             when = None
         path = out_dir / f"{protocol.id} — протокол.md"
-        path.write_text(to_markdown(protocol, when), encoding="utf-8")
+        if protocol.doc_path and Path(protocol.doc_path).is_file():
+            path.write_text(Path(protocol.doc_path).read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            path.write_text(to_markdown(protocol, when), encoding="utf-8")
         protocol.path = str(path)
     return protocols

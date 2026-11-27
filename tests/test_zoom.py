@@ -38,7 +38,9 @@ class FakeZoom:
             raise OSError("network down")
         url = request.full_url
         if url.startswith("https://zoom.us/oauth/token"):
-            return FakeResponse({"access_token": TOKEN, "expires_in": 3600})
+            return FakeResponse(
+                {"access_token": TOKEN, "refresh_token": "refresh-token", "expires_in": 3600}
+            )
         if request.method == "GET" and "/users/" in url:
             return FakeResponse({"display_name": "Ася"})
         if request.method == "POST" and url.endswith("/meetings"):
@@ -144,3 +146,80 @@ def test_unconfigured_zoom(settings) -> None:
     assert channels_status(settings, channels=ch)["zoom"]["configured"] is False
     with pytest.raises(ZoomError):
         ch.zoom.create_meeting("Тема")
+
+
+def test_saved_link_from_dashboard(settings) -> None:
+    from app.links import set_link
+
+    set_link(settings, "zoom", "zoom.us/j/222")
+    ch = Channels(settings)
+    assert ch.zoom.config.mode == "link"
+    assert ch.zoom.create_meeting("Тема")["join_url"] == "https://zoom.us/j/222"
+
+
+def test_oauth_login_flow(settings) -> None:
+    from urllib.parse import parse_qs, urlparse
+
+    from app.zoom import authorize_url, check_state
+
+    api_settings(
+        settings,
+        ZOOM_CLIENT_ID="cid",
+        ZOOM_CLIENT_SECRET=SECRET,
+        ZOOM_REDIRECT_URI="http://127.0.0.1:8000/api/zoom/callback",
+    )
+    fake = FakeZoom()
+    ch = Channels(settings, urlopen=fake)
+    url = authorize_url(ch.zoom.config)
+    assert url.startswith("https://zoom.us/oauth/authorize?")
+    query = parse_qs(urlparse(url).query)
+    assert query["response_type"] == ["code"]
+    assert query["client_id"] == ["cid"]
+    assert query["redirect_uri"] == ["http://127.0.0.1:8000/api/zoom/callback"]
+    state = query["state"][0]
+    assert check_state(state) is True
+    assert check_state(state) is False
+
+    result = ch.zoom.login("test-code")
+    assert result == {"name": "Ася", "mode": "login"}
+    assert ch.zoom.config.logged_in is True
+    tokens_file = settings.db_path.parent / "zoom_oauth.json"
+    tokens = json.loads(tokens_file.read_text(encoding="utf-8"))
+    assert tokens["refresh_token"] == "refresh-token"
+
+    status = channels_status(settings, channels=ch)
+    assert status["zoom"]["mode"] == "login"
+    assert status["zoom"]["logged_in"] is True
+    assert status["zoom"]["name"] == "Ася"
+    payload = json.dumps(status, ensure_ascii=False)
+    assert TOKEN not in payload
+    assert "refresh-token" not in payload
+
+    meeting = ch.zoom.create_meeting("Бюджет", "2026-11-28 10:00")
+    assert meeting["mode"] == "login"
+    assert meeting["join_url"].startswith("https://zoom.us/j/")
+    assert "/users/me/meetings" in fake.requests[-1].full_url
+
+    ch.zoom.logout()
+    assert not tokens_file.exists()
+    assert channels_status(settings, channels=Channels(settings))["zoom"]["configured"] is False
+
+
+def test_expired_login_token_is_refreshed(settings) -> None:
+    api_settings(
+        settings,
+        ZOOM_CLIENT_ID="cid",
+        ZOOM_CLIENT_SECRET=SECRET,
+        ZOOM_REDIRECT_URI="http://127.0.0.1:8000/api/zoom/callback",
+    )
+    (settings.db_path.parent / "zoom_oauth.json").write_text(
+        json.dumps({"access_token": "old", "refresh_token": "r1", "expires_at": 1, "name": "Ася"}),
+        encoding="utf-8",
+    )
+    fake = FakeZoom()
+    ch = Channels(settings, urlopen=fake)
+    assert ch.zoom.config.mode == "login"
+    assert ch.zoom.check()["ok"] is True
+    assert "grant_type=refresh_token" in fake.requests[0].full_url
+    saved = json.loads((settings.db_path.parent / "zoom_oauth.json").read_text(encoding="utf-8"))
+    assert saved["access_token"] == TOKEN

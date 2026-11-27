@@ -2,6 +2,8 @@
 """HTTP-слой без внешнего клиента: вызываем обработчики напрямую."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi import HTTPException
 
@@ -22,9 +24,55 @@ def test_run_and_summary(client) -> None:
     assert len(data["inbox"]) == 80
     assert len(data["drafts"]) == 54
     assert len(data["protocols"]) == 5
-    assert data["economics"]["saving"] == 69_221
+    assert data["economics"]["saving"] == 311_661
+    assert data["economics"]["meetings"]["per_week"]["max"] == 40
     assert data["morning"]["date"] == "2026-12-07"
     assert any(event["kind"] == "run" for event in data["events"])
+
+
+def test_crm_contacts_grouping(client) -> None:
+    data = api.crm()
+    assert data["total"] == 14
+    assert data["external"] == 4
+    assert data["internal"] == 10
+    assert data["letters"] == 80
+    external = [c for c in data["contacts"] if c["external"]]
+    assert {c["email"] for c in external} == {
+        "client1@romashka.example",
+        "client2@tehnostroy.example",
+        "news@vendor.example",
+        "events@conf.example",
+    }
+    romashka = next(c for c in external if c["email"] == "client1@romashka.example")
+    assert romashka["letters"] == 4
+    assert romashka["role"] == "клиент"
+    assert romashka["last_subject"]
+    assert romashka["last_action"] == "спросить_руководителя"
+    assert data["contacts"][0]["external"] is True
+
+
+def test_dashboard_contains_rail_and_crm() -> None:
+    page = api.dashboard()
+    assert 'id="secMail"' in page
+    assert 'id="secTasks"' in page
+    assert 'id="secCrm"' in page
+    assert 'id="secMeetings"' in page
+    assert 'id="secMessages"' in page
+    assert 'data-sec="secCrm"' in page
+    assert "function renderTasks" in page
+    assert "/api/crm" in page
+    assert 'id="bitrixCheck"' in page
+    assert 'id="bitrixImport"' in page
+    assert 'id="bitrixStatus"' in page
+    assert "function exportContact" in page
+    assert "/api/crm/bitrix/import" in page
+    assert "BITRIX24_WEBHOOK_URL" in page
+    assert 'id="gateChannels"' in page
+    assert 'id="onbMailAdd"' in page
+    assert 'id="onbTgCheck"' in page
+    assert 'id="onbCrmCheck"' in page
+    assert "/api/channels/check" in page
+    assert "function showChannelsStep" in page
 
 
 def test_edit_approve_reject_flow(client) -> None:
@@ -71,8 +119,21 @@ def test_calendar_and_journal_csv(client) -> None:
     api.approve_protocol(protocol["id"])
     calendar = api.calendar()
     assert calendar["approved"] == len(protocol["tasks"])
-    assert calendar["total"] == 37
+    assert calendar["total"] == 50
     assert calendar["tasks"][0]["protocol"] == protocol["title"]
+    assert calendar["days"] == [
+        "2026-12-07", "2026-12-08", "2026-12-09", "2026-12-10", "2026-12-11",
+        "2026-12-14", "2026-12-15", "2026-12-16", "2026-12-17", "2026-12-18",
+    ]
+    assert len(calendar["events"]) == 50
+    assert calendar["events"][0]["start"] == "10:00"
+    assert any(event["protected"] for event in calendar["events"])
+    for event in calendar["events"]:
+        protocol_id = event["protocol_id"]
+        assert event["protocol_topic"]
+        assert protocol_id in calendar["protocols"]
+        assert calendar["protocols"][protocol_id]["tasks"]
+    assert len(calendar["protocols"]) == 5
     csv_body = api.journal_csv().body.decode("utf-8")
     assert "at,kind,details" in csv_body
     assert "tasks_bulk" in csv_body
@@ -87,6 +148,50 @@ def test_dashboard_contains_queue_and_palette() -> None:
     assert 'id="channels"' in page
     assert "Живой прогон" in page
     assert 'id="zoomBtn"' in page
+    assert 'src="/assets/asya.jpg' in page
+    assert 'src="/assets/ivan-avatar.png' in page
+    assert 'id="leaderName"' in page
+    assert 'id="calendarLogin"' in page
+    assert "Войти в календарь" in page
+    assert 'id="calGate"' in page
+    assert 'id="calMeet"' in page
+    assert "function openCalMeeting" in page
+    assert "function openProtocolFromMeeting" in page
+    assert 'id="meetTitle"' in page
+    assert 'id="entryGate"' in page
+    assert 'id="photoInput"' in page
+    assert 'id="changeFace"' in page
+    assert 'data-face="own"' in page
+    assert "function stylizeFace" in page
+    assert "asistFace:v1" in page
+    assert "['asyaFace', 'gateBrandFace'].forEach" in page
+    assert 'href="/favicon.svg"' in page
+    assert 'href="/apple-touch-icon.png"' in page
+    assert 'name="theme-color" content="#B4552D"' in page
+
+
+def test_assets_serve_portraits_and_hide_unknown() -> None:
+    for name, media in (("asya.jpg", "image/jpeg"), ("ivan-avatar.png", "image/png")):
+        response = api.asset(name)
+        assert response.media_type == media
+        path = Path(response.path)
+        assert path.name == name and path.is_file()
+    for bad in ("../api.py", "secret.jpg", "asya.png", "ivan.jpg"):
+        with pytest.raises(HTTPException) as excinfo:
+            api.asset(bad)
+        assert excinfo.value.status_code == 404
+
+
+def test_favicon_and_touch_icon_served() -> None:
+    for handler, name, media in (
+        (api.favicon_svg, "favicon.svg", "image/svg+xml"),
+        (api.favicon_ico, "favicon.ico", "image/x-icon"),
+        (api.apple_touch_icon, "apple-touch-icon.png", "image/png"),
+    ):
+        response = handler()
+        assert response.media_type == media
+        path = Path(response.path)
+        assert path.name == name and path.is_file() and path.stat().st_size > 0
 
 
 def test_channels_and_live_run_requires_config(client) -> None:

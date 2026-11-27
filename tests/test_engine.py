@@ -156,6 +156,20 @@ def test_protocols_parse_decisions_tasks_questions(settings: Settings) -> None:
     assert july.open_questions
 
 
+def test_detailed_protocols_from_transcripts(settings: Settings) -> None:
+    protocols = parse_all(settings.data_dir / "meetings", settings.data_dir / "protocols")
+    assert len(protocols) == 5
+    assert sum(len(protocol.tasks) for protocol in protocols) == 50
+    assert all(protocol.when and protocol.doc_path for protocol in protocols)
+    crm = next(protocol for protocol in protocols if protocol.id == "2026-01-15")
+    assert crm.host == "Иван Маковкин"
+    assert crm.agenda and crm.risks and crm.next_steps
+    assert any(task.owner == "Иван Маковкин, Егор Сабитов" for task in crm.tasks)
+    assert crm.tasks[0].status_source == "в работе"
+    july = next(protocol for protocol in protocols if protocol.id == "2026-07-14")
+    assert any("требуется:" in question for question in july.open_questions)
+
+
 def test_second_leader_without_code(settings: Settings) -> None:
     profile = load_profile(settings.profiles_dir / "leader2.md")
     assert profile.name == "Мария Орлова"
@@ -170,13 +184,37 @@ def test_second_leader_without_code(settings: Settings) -> None:
 
 def test_economics_matches_calculator() -> None:
     model = econ.compute(Settings())
-    assert model.drafts == 175
-    assert model.manual_cost == 87_500
-    assert model.agent_cost == 18_279
-    assert model.saving == 69_221
+    assert model.requests == 1_575
+    assert model.drafts == 788
+    assert model.manual_cost == 394_000
+    assert model.agent_cost == 82_339
+    assert model.saving == 311_661
     assert round(model.cost_per_draft, 1) == 104.5
-    assert round(model.cost_per_request, 1) == 52.2
-    assert round(model.payback_months, 1) == 1.4
+    assert round(model.cost_per_request, 1) == 52.3
+    assert round(model.payback_months, 1) == 0.3
+
+
+def test_economics_range_and_meetings() -> None:
+    report = econ.build_report(Settings())
+    assert report["requests_per_month_min"] == 1_050
+    assert report["requests_per_month_max"] == 2_100
+    assert report["drafts_per_month_min"] == 525
+    assert report["drafts_per_month_max"] == 1_050
+    assert report["saving_min"] == 207_641
+    assert report["saving_max"] == 415_287
+    meetings = report["meetings"]
+    assert meetings["per_week"]["min"] == 25
+    assert meetings["per_week"]["max"] == 40
+    assert meetings["per_month"]["min"] == 105
+    assert meetings["per_month"]["max"] == 168
+    assert meetings["review_cost"]["min"] == 8_750
+    assert meetings["review_cost"]["max"] == 14_000
+    assert meetings["saving"]["min"] == 35_000
+    assert meetings["saving"]["max"] == 56_000
+    assert report["total_saving_min"] == 242_641
+    assert report["total_saving_max"] == 471_287
+    assert report["total_payback_months_min"] == 0.2
+    assert report["total_payback_months_max"] == 0.4
 
 
 def test_morning_and_weekly_digest(settings: Settings) -> None:

@@ -161,6 +161,7 @@ class ProtocolTask:
     owner: str
     deadline: str = ""
     done: bool = False
+    status_source: str = ""
 
 
 @dataclass
@@ -172,6 +173,13 @@ class Protocol:
     open_questions: list[str]
     sources: list[Source]
     path: str = ""
+    when: str = ""
+    host: str = ""
+    participants: str = ""
+    agenda: list[str] = field(default_factory=list)
+    risks: list[str] = field(default_factory=list)
+    next_steps: list[str] = field(default_factory=list)
+    doc_path: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -179,9 +187,22 @@ class Protocol:
             "title": self.title,
             "decisions": self.decisions,
             "tasks": [
-                {"text": t.text, "owner": t.owner, "deadline": t.deadline} for t in self.tasks
+                {
+                    "text": t.text,
+                    "owner": t.owner,
+                    "deadline": t.deadline,
+                    "status_source": t.status_source,
+                }
+                for t in self.tasks
             ],
             "open_questions": self.open_questions,
             "sources": [s.as_dict() for s in self.sources],
             "path": self.path,
+            "when": self.when,
+            "host": self.host,
+            "participants": self.participants,
+            "agenda": self.agenda,
+            "risks": self.risks,
+            "next_steps": self.next_steps,
+            "doc_path": self.doc_path,
         }

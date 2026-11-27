@@ -20,6 +20,7 @@ from .knowledge import KnowledgeBase
 from .meetings import parse_all, write_protocols
 from .models import SENSITIVE_RISKS, Action, Classification, Draft, Email
 from .profile import Profile, load_profile
+from .rules import audit as rules_audit
 
 
 @dataclass
@@ -100,7 +101,7 @@ def run(
     tasks = load_tasks(data_dir / "tasks.csv")
     events = load_calendar(data_dir / "calendar.ics")
     contacts = load_contacts(data_dir / "contacts.csv")
-    protocols = parse_all(data_dir / "meetings")
+    protocols = parse_all(data_dir / "meetings", data_dir / "protocols")
     write_protocols(protocols, out_dir / "protocols")
 
     kb = KnowledgeBase.build(profile, org, tasks, events, protocols)
@@ -142,7 +143,9 @@ def run(
     auto_sends = sum(1 for draft in drafts if draft.sent)
     morning = morning_plan(emails[0].received if emails else datetime.now(), emails, classifications, events, tasks, protocols)
     digest = weekly_digest(emails[0].received if emails else datetime.now(), emails, classifications, events, tasks, protocols)
-    economics = econ.compute(settings)
+    economics_report = econ.build_report(settings)
+    rules_report = rules_audit(profile, emails, org, tasks, events)
+    rules_eval = rules_report["email"]["eval"]
 
     metrics = {
         "profile_name": profile.name,
@@ -168,8 +171,19 @@ def run(
         "protocol_open_questions": sum(len(protocol.open_questions) for protocol in protocols),
         "protected_hours_week": digest["protected_hours"],
         "meetings_week": digest["meetings"],
-        "economics": economics.as_dict(),
+        "economics": economics_report,
         "learning_hints": sorted(hints),
+        "rules": {
+            "threads": rules_report["email"]["threads_total"],
+            "thread_accuracy": rules_eval["thread_accuracy"],
+            "email_accuracy": rules_eval["email_accuracy"],
+            "sensitive_auto": len(rules_eval["sensitive_auto"]),
+            "calendar_changes": len(rules_report["calendar"]["changes"]),
+            "focus_hours_week": rules_report["calendar"]["focus_hours_week"],
+            "overdue_tasks": rules_report["tasks"]["overdue"],
+            "status_mismatches": [item["id"] for item in rules_report["tasks"]["status_mismatches"]],
+            "plan_date": rules_report["plan"]["date"],
+        },
     }
     journal.finish_run(run_id, metrics)
     journal.log(
@@ -192,7 +206,8 @@ def run(
         "protocols": [protocol.as_dict() for protocol in protocols],
         "drafts": [draft.as_dict() for draft in drafts],
         "classifications": [item.as_dict() for item in classifications],
-        "economics_text": econ.explain(economics),
+        "economics_text": econ.explain(settings, economics_report),
+        "rules": rules_report,
     }
     files: dict[str, str] = {}
     report_json = out_dir / "report.json"
@@ -215,6 +230,15 @@ def run(
         f"Протоколов: {metrics['protocols']} · задач из протоколов: {metrics['protocol_tasks']} · "
         f"открытых вопросов: {metrics['protocol_open_questions']}",
         f"Ссылки на источники в черновиках: {metrics['citations_coverage']:.0%}",
+        "",
+        "## Правила из файлов",
+        f"Тем: {metrics['rules']['threads']}, точность по темам {metrics['rules']['thread_accuracy']:.0%}; "
+        f"чувствительных тем в авто: {metrics['rules']['sensitive_auto']}",
+        f"Календарь: автопереносов {metrics['rules']['calendar_changes']}; фокус "
+        + ", ".join(f"{week}: {hours:g} ч" for week, hours in metrics["rules"]["focus_hours_week"].items()),
+        f"Задачи: просрочены {', '.join(metrics['rules']['overdue_tasks']) or 'нет'}; "
+        f"статус расходится: {', '.join(metrics['rules']['status_mismatches']) or 'нет'}",
+        f"План на {metrics['rules']['plan_date']} — в report.json, раздел rules",
         "",
         "## Экономика",
         *[f"- {line}" for line in report["economics_text"]],
@@ -280,7 +304,7 @@ def run(
         morning=morning,
         digest=digest,
         metrics=metrics,
-        economics=economics.as_dict(),
+        economics=economics_report,
         out_dir=out_dir,
         files=files,
     )

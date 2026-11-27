@@ -120,10 +120,33 @@ CREATE TABLE IF NOT EXISTS seen_messages (
   at TEXT NOT NULL,
   PRIMARY KEY (channel, uid)
 );
+CREATE TABLE IF NOT EXISTS meeting_minutes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  started_at TEXT NOT NULL,
+  finished_at TEXT,
+  seconds INTEGER NOT NULL DEFAULT 0,
+  profile TEXT,
+  role TEXT,
+  week TEXT,
+  subtitle TEXT,
+  channel TEXT,
+  items_json TEXT
+);
+CREATE TABLE IF NOT EXISTS meeting_tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  minute_id INTEGER NOT NULL,
+  item_index INTEGER NOT NULL DEFAULT 0,
+  title TEXT NOT NULL,
+  owner TEXT,
+  due TEXT,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL
+);
 """
 
 TASK_STATUSES = ("waiting", "approved", "in_progress", "done", "open")
 STEP_STATUSES = ("waiting", "in_progress", "done")
+MEETING_TASK_STATUSES = ("open", "done")
 
 
 class Journal:
@@ -270,6 +293,120 @@ class Journal:
             {"at": row["at"], "kind": row["kind"], "payload": json.loads(row["payload_json"] or "{}")}
             for row in rows
         ]
+
+    def save_minutes(self, payload: dict[str, Any]) -> int:
+        """Протокол встречи, которую Ася провела голосом."""
+        cur = self.conn.execute(
+            "INSERT INTO meeting_minutes(started_at, finished_at, seconds, profile, role, week, subtitle, channel, items_json) "
+            "VALUES(?,?,?,?,?,?,?,?,?)",
+            (
+                payload["started_at"],
+                payload.get("finished_at", ""),
+                int(payload.get("seconds", 0)),
+                payload.get("profile", ""),
+                payload.get("role", ""),
+                payload.get("week", ""),
+                payload.get("subtitle", ""),
+                payload.get("channel", ""),
+                json.dumps(payload.get("items", []), ensure_ascii=False),
+            ),
+        )
+        self.conn.commit()
+        return int(cur.lastrowid)
+
+    @staticmethod
+    def _minute_view(row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "id": int(row["id"]),
+            "started_at": row["started_at"],
+            "finished_at": row["finished_at"] or "",
+            "seconds": int(row["seconds"] or 0),
+            "profile": row["profile"] or "",
+            "role": row["role"] or "",
+            "week": row["week"] or "",
+            "subtitle": row["subtitle"] or "",
+            "channel": row["channel"] or "",
+            "items": json.loads(row["items_json"] or "[]"),
+        }
+
+    def minutes(self, limit: int = 20) -> list[dict[str, Any]]:
+        rows = self.conn.execute(
+            "SELECT * FROM meeting_minutes ORDER BY id DESC LIMIT ?",
+            (max(1, min(int(limit), 100)),),
+        ).fetchall()
+        counts = {
+            int(row["minute_id"]): (int(row["total"]), int(row["done"]))
+            for row in self.conn.execute(
+                "SELECT minute_id, COUNT(*) AS total, SUM(status='done') AS done "
+                "FROM meeting_tasks GROUP BY minute_id"
+            )
+        }
+        out = []
+        for row in rows:
+            item = self._minute_view(row)
+            total, done = counts.get(item["id"], (0, 0))
+            item["tasks_total"] = total
+            item["tasks_done"] = done
+            out.append(item)
+        return out
+
+    def minute(self, minute_id: int) -> dict[str, Any] | None:
+        row = self.conn.execute("SELECT * FROM meeting_minutes WHERE id=?", (int(minute_id),)).fetchone()
+        if not row:
+            return None
+        item = self._minute_view(row)
+        item["tasks"] = self.meeting_tasks(item["id"])
+        return item
+
+    @staticmethod
+    def _meeting_task_view(row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "id": int(row["id"]),
+            "minute_id": int(row["minute_id"]),
+            "item_index": int(row["item_index"] or 0),
+            "title": row["title"],
+            "owner": row["owner"] or "",
+            "due": row["due"] or "",
+            "status": row["status"] or "open",
+            "created_at": row["created_at"],
+        }
+
+    def meeting_tasks(self, minute_id: int) -> list[dict[str, Any]]:
+        rows = self.conn.execute(
+            "SELECT * FROM meeting_tasks WHERE minute_id=? ORDER BY id", (int(minute_id),)
+        ).fetchall()
+        return [self._meeting_task_view(row) for row in rows]
+
+    def add_meeting_task(
+        self, minute_id: int, item_index: int, title: str, owner: str = "", due: str = ""
+    ) -> dict[str, Any] | None:
+        if self.minute(minute_id) is None:
+            return None
+        cur = self.conn.execute(
+            "INSERT INTO meeting_tasks(minute_id, item_index, title, owner, due, status, created_at) "
+            "VALUES(?,?,?,?,?,'open',?)",
+            (int(minute_id), int(item_index), title, owner, due, self._now()),
+        )
+        self.conn.commit()
+        row = self.conn.execute("SELECT * FROM meeting_tasks WHERE id=?", (cur.lastrowid,)).fetchone()
+        return self._meeting_task_view(row)
+
+    def set_meeting_task_state(
+        self, minute_id: int, task_id: int, status: str
+    ) -> dict[str, Any] | None:
+        if status not in MEETING_TASK_STATUSES:
+            return None
+        row = self.conn.execute(
+            "SELECT * FROM meeting_tasks WHERE id=? AND minute_id=?", (int(task_id), int(minute_id))
+        ).fetchone()
+        if not row:
+            return None
+        self.conn.execute(
+            "UPDATE meeting_tasks SET status=? WHERE id=?", (status, int(task_id))
+        )
+        self.conn.commit()
+        fresh = self.conn.execute("SELECT * FROM meeting_tasks WHERE id=?", (int(task_id),)).fetchone()
+        return self._meeting_task_view(fresh)
 
     def drafts(self, run_id: int | None = None) -> list[dict[str, Any]]:
         run_id = run_id or self.last_run()

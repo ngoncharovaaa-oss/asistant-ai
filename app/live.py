@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Живые каналы: IMAP-приём, SMTP-отправка, Telegram Bot API и Zoom.
+"""Живые каналы: IMAP-приём, SMTP-отправка, Telegram Bot API, Zoom и Телемост.
 
 Секреты читаются только из .env. Ни статусы, ни журнал, ни сообщения об ошибках
 не содержат паролей и токенов: наружу отдаются только признаки «настроен/ошибка».
@@ -19,13 +19,27 @@ from datetime import datetime
 from email.header import decode_header, make_header
 from email.message import EmailMessage
 from email.utils import formataddr, formatdate, make_msgid, parseaddr, parsedate_to_datetime
+from pathlib import Path
 from typing import Any, Callable
 
+from .bitrix24 import Bitrix24Client, load_bitrix24
 from .config import Settings
 from .journal import Journal
+from .mailboxes import PROVIDERS, Mailbox, MailboxStore
 from .models import Email
+from .periods import normalize_period, period_start_date, period_title, periods_public
 from .pipeline import RunResult, run as run_pipeline
+from .telemost import TelemostClient, load_telemost
+from .tg_user import TelegramUser, load_telegram_user
 from .zoom import ZoomClient, load_zoom
+
+IMAP_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def imap_date(dt: datetime) -> str:
+    """Дата для IMAP SEARCH: локаль не влияет на названия месяцев."""
+    return f"{dt.day:02d}-{IMAP_MONTHS[dt.month - 1]}-{dt.year}"
+
 
 
 class ChannelError(RuntimeError):
@@ -39,6 +53,39 @@ def _decode(value: str | None) -> str:
         return str(make_header(decode_header(value))).strip()
     except Exception:
         return value.strip()
+
+
+_APP_PASSWORD_HINTS = {
+    "gmail": "Gmail не принял пароль: нужен пароль приложения из 16 символов — Google-аккаунт → Безопасность → Двухэтапная проверка → Пароли приложений; IMAP в Gmail должен быть включён.",
+    "mailru": "Mail.ru требует пароль для внешних приложений — Настройки почты → Безопасность → Пароли для внешних приложений.",
+    "yandex": "Яндекс требует пароль приложения — Яндекс ID → Безопасность → Пароли приложений; в почте должен быть включён IMAP.",
+    "outlook": "Outlook не принял пароль: нужен пароль приложения или разрешение IMAP/SMTP в тенанте.",
+}
+
+
+def _imap_login_hint(account: "MailAccount", exc: Exception) -> str:
+    """Человеческая причина отказа IMAP без секретов в тексте."""
+    text = ""
+    for part in getattr(exc, "args", ()) or ():
+        if isinstance(part, bytes):
+            text += " " + part.decode("utf-8", "ignore")
+        else:
+            text += " " + str(part)
+    text = text.lower()
+    host = (account.imap_host or "").lower()
+    if "gmail" in host:
+        return _APP_PASSWORD_HINTS["gmail"]
+    if "mail.ru" in host or ".emx." in host or "mailru" in host:
+        return _APP_PASSWORD_HINTS["mailru"]
+    if "yandex" in host:
+        return _APP_PASSWORD_HINTS["yandex"]
+    if "office365" in host or "outlook" in host:
+        return _APP_PASSWORD_HINTS["outlook"]
+    if "authenticationfailed" in text or "invalid credentials" in text or "authentication failed" in text:
+        return "Сервер не принял логин или пароль (IMAP)."
+    if "timed out" in text or "timeout" in text:
+        return "IMAP-сервер не ответил вовремя — проверьте сеть."
+    return "Не удалось подключиться к IMAP-серверу."
 
 
 def _html_to_text(raw: str) -> str:
@@ -146,6 +193,12 @@ def _env_int(env: dict[str, str], key: str, default: int) -> int:
         return default
 
 
+def mailbox_store(settings: Settings) -> MailboxStore:
+    custom = settings.env.get("MAILBOXES_PATH", "").strip()
+    path = Path(custom).expanduser() if custom else settings.db_path.parent / "mailboxes.json"
+    return MailboxStore(path)
+
+
 def load_accounts(settings: Settings) -> dict[str, MailAccount]:
     env = settings.env
     accounts: dict[str, MailAccount] = {}
@@ -166,6 +219,20 @@ def load_accounts(settings: Settings) -> dict[str, MailAccount]:
             user=user,
             password=password,
             from_name=env.get(f"MAIL_{suffix}_FROM_NAME", "").strip(),
+        )
+    for mb in mailbox_store(settings).list():
+        if not mb.configured or mb.id in accounts:
+            continue
+        accounts[mb.id] = MailAccount(
+            label=mb.id,
+            address=mb.address or mb.user,
+            imap_host=mb.imap_host,
+            imap_port=mb.imap_port,
+            smtp_host=mb.smtp_host,
+            smtp_port=mb.smtp_port,
+            user=mb.user or mb.address,
+            password=mb.password,
+            from_name=mb.from_name,
         )
     return accounts
 
@@ -197,6 +264,9 @@ class Channels:
         self._smtp_factory = smtp_factory or self._default_smtp
         self._urlopen = urlopen or urllib.request.urlopen
         self.zoom = ZoomClient(load_zoom(settings), urlopen=self._urlopen)
+        self.telemost = TelemostClient(load_telemost(settings))
+        self.tg_user = TelegramUser(load_telegram_user(settings))
+        self.bitrix = Bitrix24Client(load_bitrix24(settings), urlopen=self._urlopen)
 
     @staticmethod
     def _default_smtp(host: str, port: int) -> Any:
@@ -210,7 +280,13 @@ class Channels:
     def mail_configured(self) -> bool:
         return any(account.configured for account in self.accounts.values())
 
-    def fetch(self, label: str, limit: int = 20, seen: set[str] | None = None) -> tuple[list[Email], list[str]]:
+    def fetch(
+        self,
+        label: str,
+        limit: int = 20,
+        seen: set[str] | None = None,
+        unseen_only: bool = False,
+    ) -> tuple[list[Email], list[str]]:
         account = self.accounts.get(label)
         if not account or not account.configured:
             raise ChannelError(f"mail_{label}: not configured")
@@ -218,12 +294,12 @@ class Channels:
         try:
             conn = self._imap_factory(account.imap_host, account.imap_port)
             conn.login(account.user, account.password)
-        except Exception:
-            raise ChannelError(f"mail_{label}: imap login failed") from None
+        except Exception as exc:
+            raise ChannelError(f"mail_{label}: {_imap_login_hint(account, exc)}") from None
         pairs: list[tuple[Email, str]] = []
         try:
             conn.select("INBOX", readonly=True)
-            _, data = conn.uid("search", None, "ALL")
+            _, data = conn.uid("search", None, "UNSEEN" if unseen_only else "ALL")
             raw_uids = (data[0] or b"").split() if data else []
             for uid_raw in reversed(raw_uids):
                 if len(pairs) >= limit:
@@ -253,6 +329,68 @@ class Channels:
                 pass
         pairs.sort(key=lambda pair: pair[0].received)
         return [item for item, _ in pairs], [uid for _, uid in pairs]
+
+    def unread(self, label: str, limit: int = 20, period: str = "all") -> dict[str, Any]:
+        """Непрочитанные в INBOX за выбранный период: всего, за сегодня и список.
+
+        Читаем через BODY.PEEK — письма остаются непрочитанными в вашем ящике.
+        """
+        account = self.accounts.get(label)
+        if not account or not account.configured:
+            raise ChannelError(f"mail_{label}: not configured")
+        period = normalize_period(period)
+        start = period_start_date(period)
+        try:
+            conn = self._imap_factory(account.imap_host, account.imap_port)
+            conn.login(account.user, account.password)
+        except Exception as exc:
+            raise ChannelError(f"mail_{label}: {_imap_login_hint(account, exc)}") from None
+        try:
+            conn.select("INBOX", readonly=True)
+            criteria = ["UNSEEN"]
+            if start is not None:
+                criteria += ["SINCE", start.strftime("%d-%b-%Y")]
+            _, data = conn.uid("search", None, *criteria)
+            uids = (data[0] or b"").split() if data else []
+            _, today_data = conn.uid("search", None, "UNSEEN", "SINCE", imap_date(datetime.now()))
+            today = set((today_data[0] or b"").split()) if today_data else set()
+            messages: list[dict[str, Any]] = []
+            for uid_raw in list(reversed(uids))[:limit]:
+                uid = uid_raw.decode() if isinstance(uid_raw, bytes) else str(uid_raw)
+                _, msg_data = conn.uid("fetch", uid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
+                raw = b""
+                for item in msg_data or []:
+                    if isinstance(item, tuple) and len(item) > 1:
+                        raw = item[1]
+                        break
+                if not raw:
+                    continue
+                msg = mailparse.message_from_bytes(raw)
+                from_name, from_email = parseaddr(_decode(msg.get("From", "")))
+                messages.append(
+                    {
+                        "uid": uid,
+                        "from_name": from_name or from_email,
+                        "from_email": from_email,
+                        "subject": _decode(msg.get("Subject", "")) or "(без темы)",
+                        "received": _safe_date(msg).isoformat(timespec="minutes"),
+                        "today": uid_raw in today,
+                    }
+                )
+        except Exception:
+            raise ChannelError(f"mail_{label}: imap unread failed") from None
+        finally:
+            try:
+                conn.logout()
+            except Exception:
+                pass
+        return {
+            "total": len(uids),
+            "today": len(today),
+            "period": period,
+            "period_title": period_title(period),
+            "messages": messages,
+        }
 
     @staticmethod
     def _parse(account: MailAccount, uid: str, raw: bytes) -> Email | None:
@@ -307,14 +445,24 @@ class Channels:
             return result
         try:
             conn = self._imap_factory(account.imap_host, account.imap_port)
-            conn.login(account.user, account.password)
+            try:
+                conn.login(account.user, account.password)
+            except Exception as exc:
+                return {"ok": False, "detail": _imap_login_hint(account, exc)}
             conn.select("INBOX", readonly=True)
             _, data = conn.uid("search", None, "ALL")
             count = len((data[0] or b"").split()) if data else 0
+            _, unseen = conn.uid("search", None, "UNSEEN")
+            unread = len((unseen[0] or b"").split()) if unseen else 0
             conn.logout()
-            result = {"ok": True, "detail": f"вход выполнен, писем в INBOX: {count}"}
+            result = {
+                "ok": True,
+                "detail": f"вход выполнен, писем в INBOX: {count}, непрочитанных: {unread}",
+                "total": count,
+                "unread": unread,
+            }
         except Exception:
-            return {"ok": False, "detail": "ошибка входа или соединения (IMAP)"}
+            return {"ok": False, "detail": "ошибка чтения INBOX по IMAP"}
         try:
             conn = self._smtp_factory(account.smtp_host, account.smtp_port)
             conn.login(account.user, account.password)
@@ -382,13 +530,96 @@ def channels_status(settings: Settings, check: bool = False, channels: Channels 
     zoom = dict(ch.zoom.config.public)
     if check and ch.zoom.config.configured:
         zoom.update(ch.zoom.check())
+    telemost = dict(ch.telemost.config.public)
+    if check and ch.telemost.config.configured:
+        telemost.update(ch.telemost.check())
+    telegram_user = dict(ch.tg_user.config.public)
+    if check and ch.tg_user.config.authorized:
+        telegram_user.update(ch.tg_user.check())
+    bitrix = dict(ch.bitrix.config.public)
+    if check and ch.bitrix.config.configured:
+        bitrix.update(ch.bitrix.check())
     return {
         "accounts": accounts,
         "telegram": telegram,
+        "telegram_user": telegram_user,
         "zoom": zoom,
+        "telemost": telemost,
+        "bitrix24": bitrix,
         "mail_configured": ch.mail_configured,
         "live_ready": ch.mail_configured and ch.telegram.configured,
         "zoom_ready": ch.zoom.config.configured,
+        "telemost_ready": ch.telemost.config.configured,
+        "telegram_user_ready": ch.tg_user.config.authorized,
+        "bitrix24_ready": ch.bitrix.config.configured,
+    }
+
+
+def providers_public() -> dict[str, dict[str, Any]]:
+    return {
+        key: {
+            "title": value["title"],
+            "imap_host": value["imap_host"],
+            "imap_port": value["imap_port"],
+            "smtp_host": value["smtp_host"],
+            "smtp_port": value["smtp_port"],
+            "note": value["note"],
+        }
+        for key, value in PROVIDERS.items()
+    }
+
+
+def mailboxes_overview(
+    settings: Settings,
+    with_unread: bool = False,
+    channels: Channels | None = None,
+    period: str = "all",
+) -> dict[str, Any]:
+    """Список ящиков с признаками без паролей и (по запросу) счётчиками за период."""
+    ch = channels or Channels(settings)
+    period = normalize_period(period)
+    registered = {mb.id: mb for mb in mailbox_store(settings).list()}
+    items: list[dict[str, Any]] = []
+    for label, account in ch.accounts.items():
+        mb = registered.get(label)
+        item: dict[str, Any] = {
+            "id": label,
+            "address": account.address or account.user,
+            "imap": account.imap_host,
+            "imap_port": account.imap_port,
+            "smtp": account.smtp_host,
+            "smtp_port": account.smtp_port,
+            "from_name": account.from_name,
+            "configured": account.configured,
+            "source": "registry" if mb else "env",
+            "provider": mb.provider if mb else "custom",
+            "provider_title": PROVIDERS.get(mb.provider if mb else "custom", {}).get("title", ""),
+            "removable": bool(mb),
+            "unread": None,
+            "unread_today": None,
+        }
+        if with_unread and account.configured:
+            try:
+                stats = ch.unread(label, limit=0, period=period)
+                item["unread"] = stats["total"]
+                item["unread_today"] = stats["today"]
+            except ChannelError as exc:
+                item["unread_error"] = str(exc)
+        items.append(item)
+    for mb in registered.values():
+        if mb.id in ch.accounts:
+            continue
+        item = mb.public()
+        item.update({"source": "registry", "removable": True, "unread": None, "unread_today": None})
+        items.append(item)
+    return {
+        "mailboxes": items,
+        "unread": sum(item.get("unread") or 0 for item in items),
+        "unread_today": sum(item.get("unread_today") or 0 for item in items),
+        "period": period,
+        "period_title": period_title(period),
+        "periods": periods_public(),
+        "providers": providers_public(),
     }
 
 
@@ -406,19 +637,30 @@ def run_live(
     journal: Journal,
     profile_path=None,
     channels: Channels | None = None,
+    labels: list[str] | None = None,
+    unseen_only: bool = False,
+    mark_seen: bool = True,
 ) -> RunResult | None:
-    """Снять новые письма из настроенных ящиков и прогнать их через тот же конвейер."""
+    """Снять письма из настроенных ящиков и прогнать их через тот же конвейер."""
     ch = channels or Channels(settings)
-    if not ch.mail_configured:
+    targets = [
+        label
+        for label, account in ch.accounts.items()
+        if account.configured and (labels is None or label in labels)
+    ]
+    if not targets:
         raise ChannelError("mail: not configured")
     limit = _env_int(settings.env, "MAIL_FETCH_LIMIT", 20)
     emails: list[Email] = []
     seen_pairs: list[tuple[str, str]] = []
     used: list[str] = []
-    for label, account in ch.accounts.items():
-        if not account.configured:
-            continue
-        batch, uids = ch.fetch(label, limit=limit, seen=journal.seen_uids(label))
+    for label in targets:
+        batch, uids = ch.fetch(
+            label,
+            limit=limit,
+            seen=set() if unseen_only else journal.seen_uids(label),
+            unseen_only=unseen_only,
+        )
         if batch:
             used.append(label)
             emails.extend(batch)
@@ -433,8 +675,9 @@ def run_live(
         emails=emails,
         source="imap:" + (",".join(used) or "none"),
     )
-    for label, uid in seen_pairs:
-        journal.mark_seen(label, [uid])
+    if mark_seen:
+        for label, uid in seen_pairs:
+            journal.mark_seen(label, [uid])
     _notify(
         ch,
         f"Ася: новых писем {len(emails)}, черновиков {result.metrics['drafts']}, "
@@ -444,7 +687,11 @@ def run_live(
 
 
 def _draft_account(ch: Channels, draft: dict[str, Any]) -> str:
-    preferred = "b" if str(draft.get("email_id", "")).startswith("live-b-") else "a"
+    email_id = str(draft.get("email_id", ""))
+    for label in ch.accounts:
+        if email_id.startswith(f"live-{label}-") and ch.accounts[label].configured:
+            return label
+    preferred = "b" if email_id.startswith("live-b-") else "a"
     account = ch.accounts.get(preferred)
     if account and account.configured:
         return preferred
