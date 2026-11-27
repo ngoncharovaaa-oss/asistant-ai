@@ -88,6 +88,23 @@
     font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
   }
   .side-title button{border:0;background:none;color:var(--terra);font-size:10.5px;text-decoration:underline;padding:0}
+  .mini-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;padding:8px 7px;border:1px solid var(--line);border-radius:10px;background:var(--card);max-width:268px}
+  .mini-cal .dow{font-size:8px;letter-spacing:.03em;text-align:center;color:var(--muted);text-transform:uppercase;padding-bottom:2px}
+  .mini-cal .day{position:relative;height:23px;border:0;border-radius:6px;background:none;font-size:10.5px;color:var(--ink-2);cursor:pointer;padding:0;font-family:inherit}
+  .mini-cal .day:hover{background:var(--paper-2)}
+  .mini-cal .day.has:after{content:"";position:absolute;left:50%;bottom:2.5px;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
+  .mini-cal .day.on{background:var(--terra);color:#FFF6E9;font-weight:600}
+  .mini-cal .day.on:after{background:#FFF6E9}
+  .mini-cal .day.off{visibility:hidden;pointer-events:none}
+  .cal-day{display:flex;flex-direction:column;gap:4px;max-width:268px}
+  .cal-day-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px}
+  .cal-link{border:0;background:none;color:var(--terra);font-size:10px;cursor:pointer;padding:0;font-family:inherit}
+  .cal-link:hover{text-decoration:underline}
+  .cal-events{display:flex;flex-direction:column;gap:3px}
+  .cal-ev{display:flex;gap:6px;font-size:10px;line-height:1.35;color:var(--ink-2)}
+  .cal-ev b{color:var(--terra-dark);font-weight:600;flex:0 0 30px}
+  .cal-ev span{min-width:0}
+  .cal-empty{font-size:9.5px;color:var(--muted)}
   .channel{
     display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;
     padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:var(--card);
@@ -497,7 +514,7 @@
   .int-rows{display:grid;gap:3px;margin-top:7px}
   .int-rows div{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--muted)}
   .int-rows b{color:var(--ink-2);font-weight:600;text-align:right}
-  .int-form{display:grid;gap:6px;margin-top:8px}
+  .int-form{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:8px}
   .int-row2{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:stretch}
   .int-row2.pair{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}
   .int-in,.int-sel{
@@ -510,6 +527,16 @@
   .int-state{font-size:10px;line-height:1.45;color:var(--muted);min-height:14px;word-break:break-word}
   .int-state.ok{color:#5C6B3B}
   .int-state.err{color:#A0402B}
+  .int-list{display:flex;flex-direction:column;gap:6px}
+  .int-list:empty{display:none}
+  .int-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--paper);min-width:0;max-width:100%}
+  .int-item-main{min-width:0;flex:1}
+  .int-item b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .int-item small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .int-item.url small{white-space:normal;word-break:break-all;color:var(--ink)}
+  .int-item-btn{border:0;background:none;padding:2px 4px;cursor:pointer;color:var(--terra);font-size:11px;white-space:nowrap}
+  .int-item-btn:hover{text-decoration:underline}
+  .int-item-x{color:var(--muted);font-size:14px;line-height:1}
   .int-note{font-size:9.5px;line-height:1.5;color:var(--muted);margin-top:9px}
   .int-note b{color:var(--ink-2)}
   .link-save-done{color:#5C6B3B}
@@ -782,8 +809,17 @@
         <button class="nav-btn" data-view="plan" type="button">План <span>день</span></button>
         <button class="nav-btn" data-view="bot" type="button">Бот <span>live</span></button>
         <button class="nav-btn" data-view="econ" type="button">Экономика <span>₽</span></button>
-        <button class="nav-btn" data-view="links" type="button">Связи <span>demo</span></button>
+        <button class="nav-btn" data-view="links" type="button">Каналы <span>demo</span></button>
       </nav>
+
+      <div class="side-block">
+        <div class="side-title">Календарь <span>декабрь 2026</span></div>
+        <div class="mini-cal" id="miniCal" role="group" aria-label="Календарь на декабрь 2026"></div>
+        <div class="cal-day">
+          <div class="cal-day-head"><b id="miniCalDayTitle">7 декабря</b><button class="cal-link" id="miniCalGo" type="button">План →</button></div>
+          <div class="cal-events" id="miniCalDay"></div>
+        </div>
+      </div>
 
       <div class="style-card">
         <div class="side-title">Стилевой профиль <button id="editStyle" type="button">Править</button></div>
@@ -1104,9 +1140,9 @@
       <div class="view" id="view-links" hidden>
         <div class="view-head">
           <div>
-            <div class="eyebrow">Интеграции и правила</div>
-            <h1>Что подключено</h1>
-            <p>Введите свои почты, Telegram-бота, Zoom и Телемост: данные хранятся только в браузере. Правила подтверждения — справа.</p>
+            <div class="eyebrow">Каналы · интеграции</div>
+            <h1>Каналы и ссылки</h1>
+            <p>Добавьте свои почты и Telegram-аккаунты, подключите Zoom и Телемост. Всё хранится только в браузере, а сгенерированные ссылки собираются в отдельном списке.</p>
           </div>
           <span class="pill">секреты вне кода</span>
         </div>
@@ -1115,34 +1151,44 @@
             <h3>Свои каналы</h3>
             <div class="dist-note" style="margin-top:-4px">Введите свои данные — они сохраняются только в этом браузере и никуда не отправляются. Пароли здесь не запрашиваются: вход в почту по IMAP выполняет локальный дашборд.</div>
             <div class="int-card">
-              <div class="int-head"><span class="ico">@</span><div><b>Почта</b><small>IMAP / SMTP · Outlook, Gmail, Яндекс, Mail.ru</small></div><span class="badge" id="linkMailBadge">не задано</span></div>
+              <div class="int-head"><span class="ico">@</span><div><b>Почты</b><small>IMAP / SMTP · Outlook, Gmail, Яндекс, Mail.ru</small></div><span class="badge" id="linkMailBadge">нет почт</span></div>
               <div class="int-form">
                 <div class="int-row2 pair">
                   <select class="int-sel" id="linkMailProvider" aria-label="Почтовый провайдер">
+                    <option value="outlook" selected>Outlook</option>
                     <option value="gmail">Gmail</option>
                     <option value="yandex">Яндекс</option>
                     <option value="mailru">Mail.ru</option>
-                    <option value="outlook">Outlook</option>
-                    <option value="other" selected>Другой</option>
+                    <option value="other">Другой</option>
                   </select>
                   <input class="int-in" id="linkMailAddress" placeholder="адрес@почта" autocomplete="username" inputmode="email">
                 </div>
                 <div class="int-actions">
-                  <button class="btn ghost small" id="linkMailSave" type="button">Сохранить адрес</button>
-                  <button class="btn ghost small" id="linkMailClear" type="button">Сбросить</button>
+                  <button class="btn ghost small" id="linkMailAdd" type="button">Добавить почту</button>
                 </div>
+                <div class="int-list" id="linkMailList"></div>
                 <div class="int-state" id="linkMailState"></div>
               </div>
             </div>
             <div class="int-card">
-              <div class="int-head"><span class="ico">TG</span><div><b>Telegram · бот</b><small>Bot API · настоящая проверка токена из браузера</small></div><span class="badge" id="linkTgBadge">не проверен</span></div>
+              <div class="int-head"><span class="ico">TG</span><div><b>Telegram</b><small>аккаунты и боты · добавление вручную</small></div><span class="badge" id="linkTgBadge">нет аккаунтов</span></div>
               <div class="int-form">
-                <input class="int-in" id="linkTgToken" placeholder="токен бота: 123456789:AA…" autocomplete="off">
-                <div class="int-row2">
-                  <input class="int-in" id="linkTgChat" placeholder="chat_id (необязательно)" autocomplete="off" inputmode="numeric">
-                  <button class="btn ghost small" id="linkTgCheck" type="button">Проверить токен</button>
+                <div class="int-row2 pair">
+                  <select class="int-sel" id="linkTgKind" aria-label="Тип Telegram">
+                    <option value="account" selected>Аккаунт</option>
+                    <option value="bot">Бот</option>
+                  </select>
+                  <input class="int-in" id="linkTgName" placeholder="@username или телефон" autocomplete="off">
                 </div>
-                <div class="int-state" id="linkTgState">Токен не сохраняется: только проверка через api.telegram.org.</div>
+                <div class="int-actions">
+                  <button class="btn ghost small" id="linkTgAdd" type="button">Добавить аккаунт</button>
+                </div>
+                <div class="int-list" id="linkTgList"></div>
+                <div class="int-row2">
+                  <input class="int-in" id="linkTgToken" placeholder="токен бота — проверка (необязательно)" autocomplete="off">
+                  <button class="btn ghost small" id="linkTgCheck" type="button">Проверить</button>
+                </div>
+                <div class="int-state" id="linkTgState">Токен не сохраняется: только проверка через api.telegram.org, бот попадёт в список.</div>
               </div>
             </div>
             <div class="int-card">
@@ -1174,7 +1220,14 @@
                 <div class="int-state" id="linkTmState"></div>
               </div>
             </div>
-            <div class="int-note">Создание ссылок Zoom, личный Telegram по коду и вход в почту по IMAP — в локальном дашборде AsiStantAI: <b>python -m app.cli serve</b> → панели «Zoom», «Телемост», «Почты», «Мой Telegram». Кнопки «Подключить Zoom» и «Сгенерировать» на стенде показывают демо-вход и демо-ссылку в браузере — без API, без комнаты и без ключей на сервере.</div>
+            <div class="int-card">
+              <div class="int-head"><span class="ico">↗</span><div><b>Сгенерированные ссылки</b><small>Zoom и Телемост · хранятся в этом браузере</small></div><span class="badge" id="genBadge">0</span></div>
+              <div class="int-form">
+                <div class="int-list" id="genList"></div>
+                <div class="int-state" id="genState">Ссылки появятся здесь после «Сгенерировать» или «Подключить Zoom».</div>
+              </div>
+            </div>
+            <div class="int-note">Вход в почту по IMAP, личный Telegram по коду и настоящие комнаты Zoom/Телемост выполняет локальный дашборд AsiStantAI: <b>python -m app.cli serve</b> → панели «Почты», «Мой Telegram», «Zoom», «Телемост». На стенде «Подключить Zoom» и «Сгенерировать» создают демо-ссылки в браузере — без API, комнаты и ключей на сервере.</div>
             <div class="dist-note"><button class="btn ghost small" id="videoBtn2" type="button">Открыть видеозвонок</button></div>
           </div>
           <div class="card meet-card">
@@ -2775,9 +2828,29 @@
   const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
   const isZoomUrl = v => /^https:\/\/([a-z0-9-]+\.)*zoom\.us\/(j|my|s)\/[^\s]+$/i.test(v);
   const isTmUrl = v => /^https:\/\/telemost\.yandex\.(ru|com)\/j\/[^\s]+$/i.test(v);
+  const linkId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const escHtml = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const tgKind = k => k === "bot" ? "бот" : "аккаунт";
+  const genTime = g => { const t = g.at ? new Date(g.at) : null; return t && !isNaN(t.getTime()) ? t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : ""; };
   function linksData() {
-    try { return JSON.parse(localStorage.getItem(LINKS_KEY) || "{}") || {}; }
-    catch (e) { return {}; }
+    let d;
+    try { d = JSON.parse(localStorage.getItem(LINKS_KEY) || "{}") || {}; } catch (e) { d = {}; }
+    let changed = false;
+    if (d.mail && d.mail.address) {
+      d.mails = Array.isArray(d.mails) ? d.mails : [];
+      if (!d.mails.some(m => m.address === d.mail.address)) d.mails.push({ id: linkId(), address: d.mail.address, provider: d.mail.provider || "other", added: new Date().toISOString() });
+      delete d.mail;
+      changed = true;
+    }
+    if (d.tg && d.tg.username) {
+      d.tgs = Array.isArray(d.tgs) ? d.tgs : [];
+      if (!d.tgs.some(t => t.name === "@" + d.tg.username)) d.tgs.push({ id: linkId(), name: "@" + d.tg.username, kind: "bot", note: d.tg.chat_id ? "chat_id " + d.tg.chat_id : "", added: new Date().toISOString() });
+      delete d.tg;
+      changed = true;
+    }
+    ["mails", "tgs", "gen"].forEach(k => { if (!Array.isArray(d[k])) { d[k] = []; changed = true; } });
+    if (changed) { try { localStorage.setItem(LINKS_KEY, JSON.stringify(d)); } catch (e) {} }
+    return d;
   }
   function linksStore(patch) {
     const data = Object.assign(linksData(), patch);
@@ -2798,29 +2871,41 @@
     el.classList.toggle("ok", kind === "ok");
     el.classList.toggle("err", kind === "err");
   }
+  function renderMailList(d) {
+    $("#linkMailList").innerHTML = d.mails.map(m => `
+      <div class="int-item">
+        <div class="int-item-main"><b>${escHtml(m.address)}</b><small>${escHtml(MAIL_HINTS[m.provider] || MAIL_HINTS.other)}</small></div>
+        <button class="int-item-btn int-item-x" type="button" data-mail-del="${escHtml(m.id)}" aria-label="Удалить почту">×</button>
+      </div>`).join("");
+    const n = d.mails.length;
+    linkBadge("#linkMailBadge", n > 0, n ? n + " " + plural(n, ["почта", "почты", "почт"]) : "нет почт");
+    $("#chMailSmall").textContent = n ? d.mails[0].address + (n > 1 ? " +" + (n - 1) : "") + " · " + (PROVIDER_NAME[d.mails[0].provider] || "почта") : "80 писем за неделю · 16 сегодня";
+  }
+  function renderTgList(d) {
+    $("#linkTgList").innerHTML = d.tgs.map(t => `
+      <div class="int-item">
+        <div class="int-item-main"><b>${escHtml(t.name)}</b><small>${escHtml(tgKind(t.kind))}${t.note ? " · " + escHtml(t.note) : ""}</small></div>
+        <button class="int-item-btn int-item-x" type="button" data-tg-del="${escHtml(t.id)}" aria-label="Удалить аккаунт">×</button>
+      </div>`).join("");
+    const n = d.tgs.length;
+    linkBadge("#linkTgBadge", n > 0, n ? n + " " + plural(n, ["аккаунт", "аккаунта", "аккаунтов"]) : "нет аккаунтов");
+    $("#chTgSmall").textContent = n ? n + " " + plural(n, ["аккаунт", "аккаунта", "аккаунтов"]) + " · вручную" : "Bot API · 2 chat_id";
+  }
+  function renderGenList(d) {
+    $("#genList").innerHTML = d.gen.map(g => `
+      <div class="int-item url">
+        <div class="int-item-main"><b>${g.provider === "zoom" ? "Zoom" : "Телемост"} · ${genTime(g)}</b><small>${escHtml(g.url)}</small></div>
+        <button class="int-item-btn" type="button" data-gen-copy="${escHtml(g.id)}">Копировать</button>
+        <button class="int-item-btn" type="button" data-gen-open="${escHtml(g.id)}">Открыть</button>
+        <button class="int-item-btn int-item-x" type="button" data-gen-del="${escHtml(g.id)}" aria-label="Удалить ссылку">×</button>
+      </div>`).join("");
+    linkBadge("#genBadge", d.gen.length > 0, String(d.gen.length));
+    linkState("#genState", d.gen.length ? "Копируются и открываются из списка. История — только в этом браузере." : "Ссылки появятся здесь после «Сгенерировать» или «Подключить Zoom».", "");
+  }
   function renderLinks() {
     const d = linksData();
-    const mail = d.mail || {};
-    $("#linkMailAddress").value = mail.address || "";
-    $("#linkMailProvider").value = mail.provider || "other";
-    linkBadge("#linkMailBadge", !!mail.address, mail.address ? "сохранён" : "не задано");
-    if (mail.address) {
-      linkState("#linkMailState", "Адрес сохранён в этом браузере · " + (MAIL_HINTS[mail.provider] || MAIL_HINTS.other), "ok");
-      $("#chMailSmall").textContent = mail.address + " · " + (PROVIDER_NAME[mail.provider] || "почта");
-    } else {
-      linkState("#linkMailState", "");
-      $("#chMailSmall").textContent = "80 писем за неделю · 16 сегодня";
-    }
-    const tg = d.tg || {};
-    $("#linkTgChat").value = tg.chat_id || "";
-    if (tg.username) {
-      linkBadge("#linkTgBadge", true, "бот @" + tg.username);
-      linkState("#linkTgState", "Бот @" + tg.username + " отвечает · токен не сохранён" + (tg.chat_id ? " · chat_id " + tg.chat_id : ""), "ok");
-      $("#chTgSmall").textContent = "бот @" + tg.username + " · проверен";
-    } else {
-      linkBadge("#linkTgBadge", false, "не проверен");
-      $("#chTgSmall").textContent = "Bot API · 2 chat_id";
-    }
+    renderMailList(d);
+    renderTgList(d);
     const zoomConn = d.zoomConn && d.zoomConn.connected ? d.zoomConn : null;
     const zoom = typeof d.zoom === "string" ? d.zoom : "";
     $("#linkZoomUrl").value = zoom;
@@ -2838,37 +2923,83 @@
     $("#linkTmUrl").value = tm;
     linkBadge("#linkTmBadge", !!tm, tm ? "сохранена" : "не задано");
     linkState("#linkTmState", tm, "");
+    renderGenList(d);
   }
-  $("#linkMailSave").addEventListener("click", () => {
+  $("#linkMailAdd").addEventListener("click", () => {
     const address = $("#linkMailAddress").value.trim();
     const provider = $("#linkMailProvider").value;
     if (!isEmail(address)) {
       linkState("#linkMailState", "Проверьте адрес: нужен вид адрес@почта.", "err");
       return;
     }
-    linksStore({ mail: { address, provider } });
-    toast("Почта сохранена", "Адрес записан только в этом браузере. Вход в ящик по IMAP выполняет локальный дашборд.");
+    const d = linksData();
+    if (d.mails.some(m => m.address.toLowerCase() === address.toLowerCase())) {
+      linkState("#linkMailState", "Этот адрес уже в списке.", "err");
+      return;
+    }
+    linksStore({ mails: [{ id: linkId(), address, provider, added: new Date().toISOString() }].concat(d.mails) });
+    $("#linkMailAddress").value = "";
+    linkState("#linkMailState", "Добавлено: " + address + " · " + (PROVIDER_NAME[provider] || "почта") + ". Пароль не запрашивается — вход выполняет локальный дашборд.", "ok");
+    toast("Почта добавлена", address + " сохранён только в этом браузере.");
   });
+  $("#linkMailAddress").addEventListener("keydown", e => { if (e.key === "Enter") $("#linkMailAdd").click(); });
   $("#linkMailAddress").addEventListener("input", () => linkState("#linkMailState", "", ""));
   $("#linkMailProvider").addEventListener("change", () => {
     if (!$("#linkMailAddress").value.trim()) return;
     const provider = $("#linkMailProvider").value;
     linkState("#linkMailState", "Проверьте сервер для «" + (PROVIDER_NAME[provider] || "другой") + "»: " + (MAIL_HINTS[provider] || MAIL_HINTS.other), "");
   });
-  $("#linkMailClear").addEventListener("click", () => {
-    $("#linkMailAddress").value = "";
-    linksStore({ mail: null });
-    linkState("#linkMailState", "Адрес удалён из браузера.", "");
+  $("#linkMailList").addEventListener("click", e => {
+    const btn = e.target.closest("[data-mail-del]");
+    if (!btn) return;
+    const d = linksData();
+    const mail = d.mails.find(m => m.id === btn.dataset.mailDel);
+    linksStore({ mails: d.mails.filter(m => m.id !== btn.dataset.mailDel) });
+    linkState("#linkMailState", mail ? "Удалено: " + mail.address + "." : "Почта удалена.", "");
+  });
+  const normTg = v => {
+    const s = v.trim();
+    if (!s) return "";
+    if (s.startsWith("@")) return s.replace(/\s+/g, "");
+    if (/^\+?[\d ()-]{5,}$/.test(s)) return s.replace(/[ ()-]/g, "");
+    return "@" + s.replace(/^@+/, "").replace(/\s+/g, "");
+  };
+  $("#linkTgAdd").addEventListener("click", () => {
+    const name = normTg($("#linkTgName").value);
+    const kind = $("#linkTgKind").value;
+    if (!name) {
+      linkState("#linkTgState", "Введите @username или телефон аккаунта.", "err");
+      return;
+    }
+    const valid = name.startsWith("@") ? /^@[A-Za-z0-9_]{3,}$/.test(name) : /^\+?\d{10,15}$/.test(name);
+    if (!valid) {
+      linkState("#linkTgState", name.startsWith("@") ? "username — латиница, цифры и _, от 3 символов." : "Телефон — 10–15 цифр, можно с «+».", "err");
+      return;
+    }
+    const d = linksData();
+    if (d.tgs.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+      linkState("#linkTgState", "Этот аккаунт уже в списке.", "err");
+      return;
+    }
+    linksStore({ tgs: [{ id: linkId(), name, kind, added: new Date().toISOString() }].concat(d.tgs) });
+    $("#linkTgName").value = "";
+    linkState("#linkTgState", "Добавлено: " + name + " · " + tgKind(kind) + ". Настоящий вход — по коду в локальном дашборде.", "ok");
+    toast("Telegram добавлен", name + " сохранён только в этом браузере.");
+  });
+  $("#linkTgName").addEventListener("keydown", e => { if (e.key === "Enter") $("#linkTgAdd").click(); });
+  $("#linkTgName").addEventListener("input", () => linkState("#linkTgState", "", ""));
+  $("#linkTgList").addEventListener("click", e => {
+    const btn = e.target.closest("[data-tg-del]");
+    if (!btn) return;
+    const d = linksData();
+    const acc = d.tgs.find(t => t.id === btn.dataset.tgDel);
+    linksStore({ tgs: d.tgs.filter(t => t.id !== btn.dataset.tgDel) });
+    linkState("#linkTgState", acc ? "Удалён " + acc.name + "." : "Аккаунт удалён.", "");
   });
   $("#linkTgCheck").addEventListener("click", async () => {
     const token = $("#linkTgToken").value.trim();
-    const chat = $("#linkTgChat").value.trim();
     if (!/^\d{5,12}:[A-Za-z0-9_-]{25,}$/.test(token)) {
       linkState("#linkTgState", "Токен выглядит так: 123456789:AA… — скопируйте его из @BotFather целиком.", "err");
-      return;
-    }
-    if (chat && !/^-?\d+$/.test(chat)) {
-      linkState("#linkTgState", "chat_id — число (можно отрицательное), например 123456789.", "err");
       return;
     }
     linkState("#linkTgState", "Проверяю через api.telegram.org…", "");
@@ -2878,8 +3009,11 @@
       if (res.ok && data && data.ok && data.result) {
         const user = data.result.username || data.result.first_name || "бот";
         $("#linkTgToken").value = "";
-        linksStore({ tg: { username: user, chat_id: chat } });
-        linkState("#linkTgState", "Бот @" + user + " отвечает. Токен не сохранён — только результат проверки.", "ok");
+        const d = linksData();
+        if (!d.tgs.some(t => t.name === "@" + user)) {
+          linksStore({ tgs: [{ id: linkId(), name: "@" + user, kind: "bot", note: "проверен", added: new Date().toISOString() }].concat(d.tgs) });
+        }
+        linkState("#linkTgState", "Бот @" + user + " отвечает. Токен не сохранён — бот добавлен в список проверенных.", "ok");
         toast("Telegram на связи", "Бот @" + user + " ответил на проверку из браузера.");
       } else {
         linkState("#linkTgState", "Telegram ответил: " + ((data && data.description) || ("HTTP " + res.status)) + ".", "err");
@@ -2887,11 +3021,6 @@
     } catch (e) {
       linkState("#linkTgState", "Не удалось достучаться до api.telegram.org: сеть, блокировка или CORS. Живая проверка — в локальном дашборде.", "err");
     }
-  });
-  $("#linkTgChat").addEventListener("change", () => {
-    const chat = $("#linkTgChat").value.trim();
-    const d = linksData();
-    if (d.tg && d.tg.username) linksStore({ tg: { username: d.tg.username, chat_id: chat } });
   });
   function bindRoom(provider, inputSel, stateSel, saveSel, openSel, validator, label) {
     $(saveSel).addEventListener("click", () => {
@@ -2917,6 +3046,28 @@
   bindRoom("telemost", "#linkTmUrl", "#linkTmState", "#linkTmSave", "#linkTmOpen", isTmUrl, "https://telemost.yandex.ru/j/…");
   const rndDigits = n => { let s = ""; for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 10); return s; };
   const demoPwd = () => Math.random().toString(36).slice(2, 10);
+  function addGen(provider, url) {
+    linksStore({ gen: [{ id: linkId(), provider, url, at: new Date().toISOString() }].concat(linksData().gen).slice(0, 12) });
+  }
+  async function copyLink(url) {
+    try { await navigator.clipboard.writeText(url); toast("Скопировано", "Ссылка в буфере обмена."); }
+    catch (e) { toast("Не удалось скопировать", "Выделите ссылку в списке и скопируйте вручную."); }
+  }
+  $("#genList").addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const d = linksData();
+    if (btn.dataset.genCopy) {
+      const g = d.gen.find(x => x.id === btn.dataset.genCopy);
+      if (g) copyLink(g.url);
+    } else if (btn.dataset.genOpen) {
+      const g = d.gen.find(x => x.id === btn.dataset.genOpen);
+      if (g) window.open(g.url, "_blank", "noopener");
+    } else if (btn.dataset.genDel) {
+      linksStore({ gen: d.gen.filter(x => x.id !== btn.dataset.genDel) });
+      toast("Ссылка удалена", "Удалена только из списка в этом браузере.");
+    }
+  });
   $("#linkZoomConnect").addEventListener("click", () => {
     const btn = $("#linkZoomConnect");
     if (btn.disabled) return;
@@ -2926,34 +3077,71 @@
     setTimeout(() => {
       const url = "https://zoom.us/j/" + rndDigits(11) + "?pwd=" + demoPwd();
       linksStore({ zoomConn: { connected: true, account: "аккаунт руководителя", at: new Date().toISOString() }, zoom: url });
-      $("#linkZoomUrl").value = url;
+      addGen("zoom", url);
       btn.disabled = false;
-      linkState("#linkZoomState", "Комната создана для подключённого аккаунта (демо).", "ok");
+      linkState("#linkZoomState", "Комната создана для подключённого аккаунта (демо) и добавлена в список ссылок.", "ok");
       toast("Zoom подключён (демо)", "Показан демонстрационный вход. Настоящий OAuth выполняет локальный дашборд — ключи и токены на стенд не попадают.");
     }, 1400);
   });
   $("#linkZoomDisconnect").addEventListener("click", () => {
     linksStore({ zoomConn: null, zoom: null });
     $("#linkZoomUrl").value = "";
-    linkState("#linkZoomState", "Подключение снято — только в этом браузере.", "");
+    linkState("#linkZoomState", "Подключение снято — только в этом браузере. История ссылок осталась.", "");
     toast("Zoom отключён", "Демо-подключение удалено из браузера. Настоящий токен хранится только в локальном дашборде.");
   });
   $("#linkZoomGen").addEventListener("click", () => {
     const url = "https://zoom.us/j/" + rndDigits(11) + "?pwd=" + demoPwd();
     $("#linkZoomUrl").value = url;
     linksStore({ zoom: url });
+    addGen("zoom", url);
     const conn = linksData().zoomConn && linksData().zoomConn.connected;
-    linkState("#linkZoomState", "Демо-ссылка создана в браузере" + (conn ? " для подключённого аккаунта" : "") + ". Настоящую комнату создаёт локальный дашборд через Zoom OAuth — ключи в стенд не попадают.", "");
-    toast("Ссылка Zoom готова", "Демо-ссылка сохранена в этом браузере. Скопируйте её из поля или откройте кнопкой «Открыть».");
+    linkState("#linkZoomState", "Демо-ссылка создана" + (conn ? " для подключённого аккаунта" : "") + " и добавлена в список ниже. Настоящую комнату создаёт локальный дашборд через Zoom OAuth — ключи в стенд не попадают.", "");
+    toast("Ссылка Zoom готова", "Демо-ссылка добавлена в список «Сгенерированные ссылки».");
   });
   $("#linkTmGen").addEventListener("click", () => {
     const url = "https://telemost.yandex.ru/j/" + rndDigits(16);
     $("#linkTmUrl").value = url;
     linksStore({ telemost: url });
-    linkState("#linkTmState", "Демо-ссылка создана в браузере. Настоящую комнату создаёт локальный дашборд — ключи в стенд не попадают.", "");
-    toast("Ссылка Телемоста готова", "Демо-ссылка сохранена в этом браузере. Скопируйте её из поля или откройте кнопкой «Открыть».");
+    addGen("telemost", url);
+    linkState("#linkTmState", "Демо-ссылка создана и добавлена в список ниже. Настоящую комнату создаёт локальный дашборд — ключи в стенд не попадают.", "");
+    toast("Ссылка Телемоста готова", "Демо-ссылка добавлена в список «Сгенерированные ссылки».");
   });
   renderLinks();
+
+  /* ---------- мини-календарь слева ---------- */
+  const MINI_EVENTS = {
+    4: [{ t: "08:55", name: "Сверка плана" }],
+    7: [{ t: "10:00", name: "Планёрка: критерии сделок" }, { t: "16:00", name: "Разбор почты с Асей" }],
+    8: [{ t: "14:00", name: "Комитет: бюджет Q1" }],
+    17: [{ t: "12:00", name: "Отчёт e-com за ноябрь" }],
+    25: [{ t: "18:00", name: "Запуск интеграции" }]
+  };
+  let miniSel = 7;
+  function renderMiniDay() {
+    const evs = MINI_EVENTS[miniSel] || [];
+    $("#miniCalDayTitle").textContent = miniSel + " декабря";
+    $("#miniCalDay").innerHTML = evs.length
+      ? evs.map(e => `<div class="cal-ev"><b>${e.t}</b><span>${escHtml(e.name)}</span></div>`).join("")
+      : `<div class="cal-empty">Свободно — можно поставить фокус-блок.</div>`;
+  }
+  function renderMiniCal() {
+    const cells = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"].map(d => `<span class="dow">${d}</span>`);
+    for (let day = 0; day <= 31; day++) {
+      if (day === 0) { cells.push(`<span class="day off"></span>`); continue; }
+      const has = !!MINI_EVENTS[day];
+      cells.push(`<button class="day${has ? " has" : ""}${day === miniSel ? " on" : ""}" type="button" data-day="${day}" aria-label="${day} декабря">${day}</button>`);
+    }
+    $("#miniCal").innerHTML = cells.join("");
+    renderMiniDay();
+  }
+  $("#miniCal").addEventListener("click", e => {
+    const btn = e.target.closest("[data-day]");
+    if (!btn) return;
+    miniSel = Number(btn.dataset.day);
+    renderMiniCal();
+  });
+  $("#miniCalGo").addEventListener("click", () => showView("plan"));
+  renderMiniCal();
 
   /* ---------- старт ---------- */
   renderList();
