@@ -13,11 +13,14 @@ venv/
 .ruff_cache/
 .mypy_cache/
 
-# Данные и кэш
+# Данные и журнал
 data/*.db
 data/*.sqlite
 data/*.sqlite3
 data/llm_cache.json
+
+# Результаты прогонов
+out/
 
 # Логи и временное
 *.log
