@@ -732,6 +732,49 @@
     .gate-points{grid-template-columns:1fr 1fr}
     .gate-priv{margin-top:12px}
   }
+  /* ---------- задачи, CRM, сообщения, журнал ---------- */
+  .task-table td:first-child{min-width:260px}
+  .task-table .task-src{font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .crm-grid{display:grid;grid-template-columns:324px 1fr;gap:12px;align-items:start}
+  .crm-list{display:flex;flex-direction:column;gap:6px;max-height:560px;overflow:auto;padding-right:2px}
+  .crm-row{display:flex;gap:8px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 9px;cursor:pointer;font:inherit;color:inherit}
+  .crm-row:hover{border-color:#D8B9A5}
+  .crm-row.on{border-color:var(--terra);box-shadow:0 0 0 2px rgba(180,85,45,.12)}
+  .crm-row>div{min-width:0;flex:1}
+  .crm-row b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .crm-row small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .crm-row em{font-style:normal;font-size:10px;color:var(--muted);white-space:nowrap}
+  .crm-card{padding:16px}
+  .crm-hero{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+  .crm-hero h3{margin:0;font-size:16px}
+  .crm-hero small{font-size:10.5px;color:var(--muted)}
+  .crm-kv{display:grid;grid-template-columns:132px 1fr;gap:7px 10px;font-size:12px;margin:0}
+  .crm-kv dt{color:var(--muted)}
+  .crm-kv dd{margin:0}
+  .msg-grid{display:grid;grid-template-columns:300px 1fr;gap:12px;align-items:start}
+  .threads{display:flex;flex-direction:column;gap:6px;max-height:600px;overflow:auto;padding-right:2px}
+  .thread{display:flex;gap:8px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 9px;cursor:pointer;font:inherit;color:inherit}
+  .thread:hover{border-color:#D8B9A5}
+  .thread.on{border-color:var(--terra);box-shadow:0 0 0 2px rgba(180,85,45,.12)}
+  .thread>div{flex:1;min-width:0}
+  .thread b{display:block;font-size:12px}
+  .thread small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .thread time{font-size:9.5px;color:var(--muted)}
+  .thread .un{background:var(--terra);color:#FFF6E9;border-radius:999px;font-size:9px;padding:1px 6px;font-style:normal}
+  .msg-chat{height:600px}
+  .msg-chat .chat-log{max-height:none}
+  .jr-grid{display:grid;grid-template-columns:1fr 300px;gap:12px;align-items:start}
+  .jr-list{max-height:560px;overflow:auto;border-top:1px solid var(--line);margin-top:4px}
+  .jr-ev{display:flex;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.45;align-items:baseline}
+  .jr-ev time{color:var(--muted);font-size:10px;min-width:88px}
+  .jr-ev .k{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);min-width:124px}
+  .jr-runs{display:flex;flex-direction:column;gap:6px}
+  .jr-run{border:1px solid var(--line);border-radius:10px;padding:7px 9px;display:flex;justify-content:space-between;gap:8px;font-size:11px;line-height:1.5}
+  .jr-run small{color:var(--muted);font-size:9.5px}
+  @media (max-width:900px){
+    .crm-grid,.msg-grid,.jr-grid{grid-template-columns:1fr}
+    .msg-chat{height:520px}
+  }
 </style>
 </head>
 <body>
@@ -827,7 +870,7 @@
 
       <div class="side-block">
         <div class="side-title">Каналы <span>allow-list</span></div>
-        <div class="channel" id="sideMailCh" data-go="mail" role="button" tabindex="0" title="Открыть письма за сегодня и черновики"><span class="ico">@</span><div><b>Outlook · почта</b><small id="chMailSmall">80 писем за неделю · 16 сегодня</small></div><em>ON</em></div>
+        <div class="channel" id="sideMailCh" data-go="mail" role="button" tabindex="0" title="Открыть письма за сегодня и черновики"><span class="ico">@</span><div><b>Outlook · почта</b><small id="chMailSmall">80 писем за неделю · 17 тем</small></div><em>ON</em></div>
         <div class="channel" id="sideTgCh" data-go="tg" role="button" tabindex="0" title="Открыть подключение Telegram"><span class="ico">TG</span><div><b>Telegram</b><small id="chTgSmall">Bot API · 2 chat_id</small></div><em>ON</em></div>
       </div>
 
@@ -835,6 +878,10 @@
         <button class="nav-btn on" data-view="inbox" type="button">Лента <span id="navInbox">5</span></button>
         <button class="nav-btn" data-view="meet" type="button">Встречи <span id="navMeet">1</span></button>
         <button class="nav-btn" data-view="protocols" type="button">Протоколы <span>5</span></button>
+        <button class="nav-btn" data-view="tasks" type="button">Задачи <span id="navTasks">50</span></button>
+        <button class="nav-btn" data-view="crm" type="button">CRM <span>14</span></button>
+        <button class="nav-btn" data-view="msgs" type="button">Сообщения <span id="navMsgs">9</span></button>
+        <button class="nav-btn" data-view="journal" type="button">Журнал <span>46</span></button>
         <button class="nav-btn" data-view="plan" type="button">План <span>день</span></button>
         <button class="nav-btn" data-view="bot" type="button">Бот <span>live</span></button>
         <button class="nav-btn" data-view="econ" type="button">Экономика <span>₽</span></button>
@@ -867,13 +914,13 @@
       <div class="view" id="view-inbox">
         <div class="view-head">
           <div>
-            <div class="eyebrow">Входящие · понедельник, 7 декабря</div>
+            <div class="eyebrow">Входящие · 7–11 декабря</div>
             <h1>Что разобрала Ася</h1>
-            <p>16 писем за день схлопнуты в 9 тем. Пять тем — на вашем решении, четыре Ася закрыла по правилам профиля. Отправка — только после подтверждения.</p>
+            <p>80 писем с 7 по 11 декабря схлопнуты в 17 тем. Восемь тем — на вашем решении, девять Ася закрыла по правилам профиля. Отправка — только после подтверждения.</p>
           </div>
           <div class="view-stats">
-            <div><b id="statDrafts">16</b><span>писем разобрано</span></div>
-            <div><b id="statEsc">5</b><span>на подтверждении</span></div>
+            <div><b id="statDrafts">80</b><span>писем разобрано</span></div>
+            <div><b id="statEsc">8</b><span>на подтверждении</span></div>
             <div><b id="statSent">0</b><span>автоотправок</span></div>
           </div>
         </div>
@@ -1052,13 +1099,13 @@
           <div>
             <div class="eyebrow">Архив · пять последних встреч</div>
             <h1>Протоколы</h1>
-            <p>Решения и поручения из встреч: статусы, исполнители, сроки и связь с календарём. Новый протокол появляется здесь после утверждения на вкладке «Встречи».</p>
+            <p>Пять протоколов из архива встреч: решения, 50 поручений и 41 открытый вопрос. Новый протокол появляется здесь после утверждения на вкладке «Встречи».</p>
           </div>
           <div class="view-stats">
             <div><b id="protoCount">5</b><span>протоколов</span></div>
             <div><b id="protoTasks">14</b><span>поручений</span></div>
             <div><b id="protoOpen">5</b><span>в работе</span></div>
-            <div><b id="protoCal">17</b><span>встреч в календаре</span></div>
+            <div><b id="protoQs">41</b><span>открытых вопросов</span></div>
           </div>
         </div>
         <div class="card meet-card">
@@ -1150,6 +1197,118 @@
         </div>
       </div>
 
+      <div class="view" id="view-tasks" hidden>
+        <div class="view-head">
+          <div>
+            <div class="eyebrow">Поручения · из пяти протоколов</div>
+            <h1>Задачи</h1>
+            <p>50 поручений со сроками и владельцами. Отметьте «готово» — отметка сохранится в этом браузере, как и в рабочей системе, где изменение попадает в журнал.</p>
+          </div>
+          <div class="view-stats">
+            <div><b id="taskAll">50</b><span>поручений</span></div>
+            <div><b id="taskWork">0</b><span>в работе</span></div>
+            <div><b id="taskOpen">0</b><span>открыто</span></div>
+            <div><b id="taskDone">0</b><span>готово</span></div>
+          </div>
+        </div>
+        <div class="filters" id="taskChips">
+          <button class="chip on" data-task-filter="all" type="button">Все 50</button>
+          <button class="chip" data-task-filter="work" type="button">В работе</button>
+          <button class="chip" data-task-filter="open" type="button">Открытые</button>
+          <button class="chip" data-task-filter="done" type="button">Готово</button>
+        </div>
+        <div class="card" style="padding:12px">
+          <div style="overflow-x:auto"><table class="proto-tasks task-table"><thead><tr><th>Поручение</th><th>Протокол</th><th>Кто</th><th>Срок</th><th>Статус</th></tr></thead><tbody id="taskRows"></tbody></table></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-crm" hidden>
+        <div class="view-head">
+          <div>
+            <div class="eyebrow">Контакты · из писем и встреч</div>
+            <h1>CRM</h1>
+            <p>14 контактов, собранных из переписки: четыре внешних и десять сотрудников. В карточке — письма, темы, последнее обращение и решение Аси по нему.</p>
+          </div>
+          <div class="view-stats">
+            <div><b>14</b><span>контактов</span></div>
+            <div><b>4</b><span>внешних</span></div>
+            <div><b>10</b><span>сотрудников</span></div>
+            <div><b>80</b><span>писем</span></div>
+          </div>
+        </div>
+        <div class="filters" id="crmChips">
+          <button class="chip on" data-crm-filter="all" type="button">Все 14</button>
+          <button class="chip" data-crm-filter="ext" type="button">Внешние 4</button>
+          <button class="chip" data-crm-filter="int" type="button">Сотрудники 10</button>
+        </div>
+        <div class="crm-grid">
+          <div class="crm-list" id="crmList"></div>
+          <div class="card crm-card" id="crmCard"></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-msgs" hidden>
+        <div class="view-head">
+          <div>
+            <div class="eyebrow">Личные сообщения · Telegram</div>
+            <h1>Сообщения</h1>
+            <p>Восемь личных чатов, девять непрочитанных. Ася готовит черновик ответа — отправка только после вашего подтверждения, автоответов ноль.</p>
+          </div>
+          <div class="view-stats">
+            <div><b>8</b><span>чатов</span></div>
+            <div><b id="msgUnread">9</b><span>непрочитанных</span></div>
+            <div><b>0</b><span>автоответов</span></div>
+          </div>
+        </div>
+        <div class="msg-grid">
+          <div class="threads" id="msgThreads"></div>
+          <div class="card chat msg-chat">
+            <div class="chat-head" id="msgHead"></div>
+            <div class="chat-log" id="msgLog"></div>
+            <form class="composer" id="msgForm">
+              <input id="msgInput" placeholder="Скажите Асе, что ответить…" autocomplete="off">
+              <button class="btn primary" type="submit">Через Асю</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-journal" hidden>
+        <div class="view-head">
+          <div>
+            <div class="eyebrow">Журнал действий · аудит</div>
+            <h1>Журнал</h1>
+            <p>Все действия системы: прогоны, подключения к встречам, почты и ссылки. В рабочей системе этот же журнал отдаётся по /api/journal и выгружается в CSV.</p>
+          </div>
+          <div class="view-stats">
+            <div><b id="jrTotal">46</b><span>событий</span></div>
+            <div><b>7</b><span>прогонов</span></div>
+            <div><b>0</b><span>автоотправок</span></div>
+            <div><b>1</b><span>подтверждение</span></div>
+          </div>
+        </div>
+        <div class="filters" id="jrChips">
+          <button class="chip on" data-jr-filter="all" type="button">Все 46</button>
+          <button class="chip" data-jr-filter="run" type="button">Прогоны</button>
+          <button class="chip" data-jr-filter="meet" type="button">Встречи</button>
+          <button class="chip" data-jr-filter="mail" type="button">Почты</button>
+          <button class="chip" data-jr-filter="link" type="button">Ссылки</button>
+          <button class="chip" data-jr-filter="task" type="button">Задачи</button>
+        </div>
+        <div class="jr-grid">
+          <div class="card" style="padding:12px">
+            <div class="p-sec" style="margin-top:0">События</div>
+            <div class="jr-list" id="jrList"></div>
+          </div>
+          <div class="card" style="padding:12px">
+            <div class="p-sec" style="margin-top:0">Прогоны</div>
+            <div class="jr-runs" id="jrRuns"></div>
+            <div style="margin-top:12px"><button class="btn ghost small" id="jrCsv" type="button">Скачать CSV</button></div>
+            <div class="dist-note" style="margin-top:10px">Автоотправок 0 — все исходящие проходят подтверждение человека. CSV содержит те же 46 событий.</div>
+          </div>
+        </div>
+      </div>
+
       <div class="view" id="view-links" hidden>
         <div class="view-head">
           <div>
@@ -1203,6 +1362,14 @@
                   <button class="btn ghost small" id="linkTgCheck" type="button">Проверить</button>
                 </div>
                 <div class="int-state" id="linkTgState">Токен не сохраняется: только проверка через api.telegram.org, бот попадёт в список.</div>
+                <div class="int-row2">
+                  <input class="int-in" id="linkTgUrl" placeholder="https://t.me/… — чат, канал или бот" autocomplete="off" inputmode="url">
+                  <button class="btn ghost small" id="linkTgSave" type="button">Сохранить</button>
+                </div>
+                <div class="int-actions">
+                  <button class="btn ghost small" id="linkTgOpen" type="button">Открыть Telegram</button>
+                </div>
+                <div class="int-state" id="linkTgUrlState">Ссылка t.me сохраняется в этом браузере и открывается в новой вкладке.</div>
               </div>
             </div>
             <div class="int-card">
@@ -1241,7 +1408,7 @@
                 <div class="int-state" id="genState">Ссылки появятся здесь после «Сгенерировать» или «Подключить Zoom».</div>
               </div>
             </div>
-            <div class="int-note">Вход в почту по IMAP, личный Telegram по коду и настоящие комнаты Zoom/Телемост выполняет локальный дашборд AsiStantAI: <b>python -m app.cli serve</b> → панели «Почты», «Мой Telegram», «Zoom», «Телемост». На стенде «Подключить Zoom» и «Сгенерировать» создают демо-ссылки в браузере — без API, комнаты и ключей на сервере.</div>
+            <div class="int-note">Вход в почту по IMAP, личный Telegram по коду и настоящие комнаты Zoom/Телемост выполняет локальный дашборд AsiStantAI: <b>python -m app.cli serve</b> → панели «Почты», «Мой Telegram», «Zoom», «Телемост». На стенде поля Zoom и Телемост уже заполнены комнатами владельца — «Открыть» ведёт в них; «Сгенерировать» создаёт демонстрационные ссылки в браузере. Ключи и токены на сервере не хранятся.</div>
             <div class="dist-note"><button class="btn ghost small" id="videoBtn2" type="button">Открыть видеозвонок</button></div>
           </div>
           <div class="card meet-card">
@@ -1450,76 +1617,322 @@
 
   const items = [
     {
-      id: "romashka", name: "Клиент «Ромашка-Ритейл»", role: "Клиент · интеграция", channel: "Почта", time: "08:38",
-      subject: "Сроки запуска интеграции", preview: "Просят подтвердить запуск до 25 декабря",
-      status: "escalation", confidence: 0.98, sent: false,
-      facts: ["inbox.csv · m001", "Профиль · обязательства клиентам", "Календарь · 7 дек"],
-      reason: "Внешнее обязательство по сроку. По профилю такой ответ отправляет только руководитель — Ася подготовила черновик и остановилась.",
-      draft: "Здравствуйте!\nПодтверждаем запуск интеграции до 25 декабря. План этапов и ответственного пришлём до 9 декабря.\nС уважением, Иван Петров\nРуководитель направления SMB и Digital"
+      "id": "morozov-cloud",
+      "name": "Сергей Морозов",
+      "role": "Руководитель партнёрского направления",
+      "channel": "Почта",
+      "time": "11 дек · 17:32 · ×7",
+      "subject": "Статус по партнёру «Облако Плюс»",
+      "preview": "Договор на подписи у юристов, ждём до 12 декабря",
+      "status": "digest",
+      "confidence": 0.94,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m022, m032",
+        "Партнёр · договор на подписи",
+        "Календарь · 12 дек"
+      ],
+      "rule": "Статус проекта: тема добавлена в утреннюю сводку, дедлайн 12 декабря — в фокусе дня. Вопросов к руководителю нет.",
+      "draft": "В сводку 8:30: «Облако Плюс» — договор у юристов, ожидаем подпись до 12 декабря. Следующий шаг — счёт на предоплату."
     },
     {
-      id: "tehnostroy", name: "Клиент «ТехноСтрой»", role: "Клиент · продажи", channel: "Почта", time: "08:47 · ×2",
-      subject: "Запрос коммерческого предложения", preview: "КП на 50 лицензий, бюджет согласован",
-      status: "delegate", confidence: 0.95, sent: false,
-      facts: ["inbox.csv · m002, m006", "Оргструктура · Ольга Смирнова", "Правило · КП → продажи"],
-      rule: "Передано Ольге Смирновой, директору по продажам SMB. Итог попадёт в утреннюю сводку — ждать ответа от руководителя не нужно.",
-      draft: "Ольга, привет.\n«ТехноСтрой» просит КП на 50 лицензий и внедрение, бюджет согласован. Подготовь предложение и сроки, итог — в сводку.\nИван"
+      "id": "smirnova-discount",
+      "name": "Ольга Смирнова",
+      "role": "Директор по продажам SMB",
+      "channel": "Почта",
+      "time": "11 дек · 16:16 · ×2",
+      "subject": "Скидка 12% для «Ромашка-Ритейл» — нужно согласование",
+      "preview": "Продление контракта, скидка выше порога",
+      "status": "escalation",
+      "confidence": 0.97,
+      "sent": false,
+      "facts": [
+        "inbox.csv · скидка 12%",
+        "Профиль · деньги",
+        "Порог скидки · 10%"
+      ],
+      "reason": "Скидка выше порога и деньги — решение только за руководителем. Ася посчитала, что 12% убирают маржу сделки, и подготовила ответ с альтернативой.",
+      "draft": "Ольга, привет.\n12% не согласую: маржа сделки уходит в ноль. Предложи 8% с продлением на год и фиксом объёма — это в рамках порога.\nИван"
     },
     {
-      id: "vendor", name: "Рассылка вендора", role: "Рассылка", channel: "Почта", time: "08:49 · ×2",
-      subject: "Новости продуктов за декабрь", preview: "Вебинары и обновления платформы",
-      status: "ignore", confidence: 0.99, sent: false,
-      facts: ["inbox.csv · m003, m004", "Правило · рассылки"],
-      rule: "Рассылка. Ася не отвечает и не поднимает тему в сводку: письма остаются в архиве и не тратят внимание руководителя.",
-      draft: "Ася не отвечает и не поднимает тему в сводку. Если отправитель попадёт в allow-list, тема вернётся в ленту."
+      "id": "vacation",
+      "name": "Мария Лебедева",
+      "role": "Руководитель клиентского сервиса",
+      "channel": "Почта",
+      "time": "11 дек · 16:13 · ×8",
+      "subject": "Отпуск сотрудника сервиса 20–30 декабря",
+      "preview": "Согласование отпуска Ирины Т.",
+      "status": "escalation",
+      "confidence": 0.99,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m009, m010",
+        "Профиль · кадры"
+      ],
+      "reason": "Кадровое решение. Ответ готов, но без подтверждения руководителя не уходит — даже если формулировка нейтральная.",
+      "draft": "Мария, привет.\nОтпуск Ирины Т. с 20 по 30 декабря согласую, замену подтверждаю. Оформи, пожалуйста, до 10 декабря.\nИван"
     },
     {
-      id: "conf", name: "Организаторы конференции", role: "Внешнее приглашение", channel: "Почта", time: "09:11",
-      subject: "Приглашение спикером на конференцию", preview: "18 февраля, тема «ИИ в продажах»",
-      status: "escalation", confidence: 0.9, sent: false,
-      facts: ["inbox.csv · m005", "Профиль · внешние выступления"],
-      reason: "Внешнее выступление — репутация и календарь. Решение за руководителем: Ася подготовила вежливый ответ без обязательств.",
-      draft: "Здравствуйте!\nСпасибо за приглашение. Рассмотрим участие и вернёмся с ответом до 12 декабря.\nИван Петров"
+      "id": "romashka",
+      "name": "Клиент «Ромашка-Ритейл»",
+      "role": "Клиент · интеграция",
+      "channel": "Почта",
+      "time": "11 дек · 15:31 · ×4",
+      "subject": "Сроки запуска интеграции",
+      "preview": "Просят подтвердить запуск до 25 декабря",
+      "status": "escalation",
+      "confidence": 0.98,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m001",
+        "Профиль · обязательства клиентам",
+        "Календарь · 7 дек"
+      ],
+      "reason": "Внешнее обязательство по сроку. По профилю такой ответ отправляет только руководитель — Ася подготовила черновик и остановилась.",
+      "draft": "Здравствуйте!\nПодтверждаем запуск интеграции до 25 декабря. План этапов и ответственного пришлём до 9 декабря.\nС уважением, Иван Петров\nРуководитель направления SMB и Digital"
     },
     {
-      id: "olga", name: "Ольга Смирнова", role: "Директор по продажам SMB", channel: "Почта", time: "10:16 · ×2",
-      subject: "Прогноз выполнения плана декабря", preview: "94% плана, риск по двум сделкам",
-      status: "digest", confidence: 0.93, sent: false,
-      facts: ["inbox.csv · m007, m011", "tasks.csv · t001 просрочена"],
-      rule: "Отчёт. Ответ не нужен: тема добавлена в утреннюю сводку 8:30, риск по двум сделкам выделен. Просроченное КП «ТехноСтрой» (t001) — отдельным пунктом.",
-      draft: "В сводку 8:30: прогноз декабря — 94% плана, риск по двум сделкам. Просрочена задача t001 «КП для ТехноСтрой» (Ольга Смирнова)."
+      "id": "orlov-board",
+      "name": "Виктор Орлов",
+      "role": "Руководитель направления",
+      "channel": "Почта",
+      "time": "11 дек · 15:09 · ×5",
+      "subject": "Тезисы к совету директоров",
+      "preview": "К 15 декабря — 3 слайда по SMB за год",
+      "status": "escalation",
+      "confidence": 0.96,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m026",
+        "Профиль · письма руководству",
+        "Совет директоров · 15 дек"
+      ],
+      "reason": "Запрос от руководителя руководителя с внешним сроком. Ася собрала цифры из дашборда, но отправку оставила человеку.",
+      "draft": "Виктор, добрый день.\nК 15 декабря подготовлю 3 слайда: итоги SMB за год, воронка и партнёрский канал, планы на Q1. Черновик покажу 13 декабря.\nС уважением, Иван Петров"
     },
     {
-      id: "anna", name: "Анна Волкова", role: "Руководитель e-commerce", channel: "Почта", time: "10:34",
-      subject: "Перенос встречи по e-com на среду", preview: "Сдвиг статуса e-commerce на 11:00",
-      status: "auto", confidence: 0.97, sent: false,
-      facts: ["inbox.csv · m008", "Календарь · слот свободен", "Правило · внутренние встречи"],
-      rule: "Внутренняя регулярная встреча. Ася перенесла статус e-commerce с понедельника 15:00 на среду 11:00, участники уведомлены. Защищённые блоки не задеты.",
-      draft: "Сделано без вас: статус e-commerce перенесён на среду, 11:00. Слот был свободен, защищённый блок стратегии не затронут. В журнале — одно действие внутри правила."
+      "id": "vendor",
+      "name": "Рассылка вендора",
+      "role": "Рассылка",
+      "channel": "Почта",
+      "time": "11 дек · 14:47 · ×8",
+      "subject": "Новости продуктов за декабрь",
+      "preview": "Вебинары и обновления платформы",
+      "status": "ignore",
+      "confidence": 0.99,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m003, m004",
+        "Правило · рассылки"
+      ],
+      "rule": "Рассылка. Ася не отвечает и не поднимает тему в сводку: письма остаются в архиве и не тратят внимание руководителя.",
+      "draft": "Ася не отвечает и не поднимает тему в сводку. Если отправитель попадёт в allow-list, тема вернётся в ленту."
     },
     {
-      id: "vacation", name: "Мария Лебедева", role: "Руководитель клиентского сервиса", channel: "Почта", time: "11:48 · ×2",
-      subject: "Отпуск сотрудника сервиса 20–30 декабря", preview: "Согласование отпуска Ирины Т.",
-      status: "escalation", confidence: 0.99, sent: false,
-      facts: ["inbox.csv · m009, m010", "Профиль · кадры"],
-      reason: "Кадровое решение. Ответ готов, но без подтверждения руководителя не уходит — даже если формулировка нейтральная.",
-      draft: "Мария, привет.\nОтпуск Ирины Т. с 20 по 30 декабря согласую, замену подтверждаю. Оформи, пожалуйста, до 10 декабря.\nИван"
+      "id": "tehnostroy",
+      "name": "Клиент «ТехноСтрой»",
+      "role": "Клиент · продажи",
+      "channel": "Почта",
+      "time": "11 дек · 11:58 · ×4",
+      "subject": "Запрос коммерческого предложения",
+      "preview": "КП на 50 лицензий, бюджет согласован",
+      "status": "delegate",
+      "confidence": 0.95,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m002, m006",
+        "Оргструктура · Ольга Смирнова",
+        "Правило · КП → продажи"
+      ],
+      "rule": "Передано Ольге Смирновой, директору по продажам SMB. Итог попадёт в утреннюю сводку — ждать ответа от руководителя не нужно.",
+      "draft": "Ольга, привет.\n«ТехноСтрой» просит КП на 50 лицензий и внедрение, бюджет согласован. Подготовь предложение и сроки, итог — в сводку.\nИван"
     },
     {
-      id: "offer", name: "Игорь Фёдоров", role: "HR-бизнес-партнёр", channel: "Почта", time: "15:24 · ×2",
-      subject: "Кандидат на позицию аккаунт-менеджера", preview: "Финалист Сергей К., нужен ответ по офферу",
-      status: "escalation", confidence: 0.99, sent: false,
-      facts: ["inbox.csv · m012, m014", "Профиль · кадры", "Оргструктура · p11"],
-      reason: "Оффер — кадровое решение и деньги. Только с подтверждением руководителя; Ася собрала контекст и черновик ответа.",
-      draft: "Игорь, привет.\nПо Сергею К. — согласен, готовим оффер. Условия пришли на согласование до 9 декабря.\nИван"
+      "id": "anna",
+      "name": "Анна Волкова",
+      "role": "Руководитель e-commerce",
+      "channel": "Почта",
+      "time": "11 дек · 10:08 · ×3",
+      "subject": "Перенос встречи по e-com на среду",
+      "preview": "Сдвиг статуса e-commerce на 11:00",
+      "status": "auto",
+      "confidence": 0.97,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m008",
+        "Календарь · слот свободен",
+        "Правило · внутренние встречи"
+      ],
+      "rule": "Внутренняя регулярная встреча. Ася перенесла статус e-commerce с понедельника 15:00 на среду 11:00, участники уведомлены. Защищённые блоки не задеты.",
+      "draft": "Сделано без вас: статус e-commerce перенесён на среду, 11:00. Слот был свободен, защищённый блок стратегии не затронут. В журнале — одно действие внутри правила."
     },
     {
-      id: "budget", name: "Наталья Павлова", role: "Финансовый контролёр", channel: "Почта", time: "16:39 · ×3",
-      subject: "Перераспределение бюджета Q1", preview: "Перенос 600 тыс. ₽ с маркетинга на партнёров",
-      status: "escalation", confidence: 0.98, sent: false,
-      facts: ["inbox.csv · m013, m015, m016", "Профиль · деньги", "Комитет · 8 дек, 14:00"],
-      reason: "Бюджет 600 тыс. ₽ — тема денег. Подтверждение обязательно; вопрос вынесен в повестку комитета 8 декабря.",
-      draft: "Наталья, добрый день.\nПеренос 600 тыс. ₽ с маркетинга на партнёрский канал подтверждаю. Внесём в повестку комитета 8 декабря.\nИван"
+      "id": "novikov-dash",
+      "name": "Алексей Новиков",
+      "role": "Руководитель аналитики",
+      "channel": "Почта",
+      "time": "11 дек · 08:04 · ×6",
+      "subject": "Дашборд продаж обновлён",
+      "preview": "Отклонение от плана −6% за неделю",
+      "status": "digest",
+      "confidence": 0.93,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m020, m024, m028",
+        "Дашборд · неделя 49"
+      ],
+      "rule": "Отчёт без вопроса: тема в утренней сводке, отклонение −6% отмечено. Ответ не требуется.",
+      "draft": "В сводку 8:30: дашборд продаж за неделю обновлён, отклонение от плана −6%. Причина — две сделки сдвинулись на январь."
+    },
+    {
+      "id": "conf",
+      "name": "Организаторы конференции",
+      "role": "Внешнее приглашение",
+      "channel": "Почта",
+      "time": "10 дек · 14:07 · ×4",
+      "subject": "Приглашение спикером на конференцию",
+      "preview": "18 февраля, тема «ИИ в продажах»",
+      "status": "escalation",
+      "confidence": 0.9,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m005",
+        "Профиль · внешние выступления"
+      ],
+      "reason": "Внешнее выступление — репутация и календарь. Решение за руководителем: Ася подготовила вежливый ответ без обязательств.",
+      "draft": "Здравствуйте!\nСпасибо за приглашение. Рассмотрим участие и вернёмся с ответом до 12 декабря.\nИван Петров"
+    },
+    {
+      "id": "budget",
+      "name": "Наталья Павлова",
+      "role": "Финансовый контролёр",
+      "channel": "Почта",
+      "time": "10 дек · 11:43 · ×6",
+      "subject": "Перераспределение бюджета Q1",
+      "preview": "Перенос 600 тыс. ₽ с маркетинга на партнёров",
+      "status": "escalation",
+      "confidence": 0.98,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m013, m015, m016",
+        "Профиль · деньги",
+        "Комитет · 8 дек, 14:00"
+      ],
+      "reason": "Бюджет 600 тыс. ₽ — тема денег. Подтверждение обязательно; вопрос вынесен в повестку комитета 8 декабря.",
+      "draft": "Наталья, добрый день.\nПеренос 600 тыс. ₽ с маркетинга на партнёрский канал подтверждаю. Внесём в повестку комитета 8 декабря.\nИван"
+    },
+    {
+      "id": "lebedeva-complaint",
+      "name": "Мария Лебедева",
+      "role": "Руководитель клиентского сервиса",
+      "channel": "Почта",
+      "time": "10 дек · 11:20 · ×2",
+      "subject": "Жалоба клиента на сроки ответа",
+      "preview": "«Ромашка-Ритейл» ждёт ответа второй день",
+      "status": "delegate",
+      "confidence": 0.95,
+      "sent": false,
+      "facts": [
+        "inbox.csv · жалоба клиента",
+        "Оргструктура · Мария Лебедева",
+        "Правило · клиенты → сервис"
+      ],
+      "rule": "Передано Марии: пункт в повестку планёрки, клиенту — извинение и срок. Статус добавлен в сводку.",
+      "draft": "Мария, привет.\nПо «Ромашке» — поставь пункт в планёрку: клиент ждёт ответа второй день. Извинение и срок до вечера.\nИван"
+    },
+    {
+      "id": "sokolova-planerka",
+      "name": "Екатерина Соколова",
+      "role": "Руководитель проекта",
+      "channel": "Почта",
+      "time": "10 дек · 10:52 · ×2",
+      "subject": "Подтвердите участие в планёрке",
+      "preview": "Регулярная планёрка понедельника",
+      "status": "auto",
+      "confidence": 0.98,
+      "sent": false,
+      "facts": [
+        "inbox.csv · планёрка",
+        "Календарь · понедельник 10:00",
+        "Правило · внутренние встречи"
+      ],
+      "rule": "Регулярная встреча: Ася подтвердила участие по правилу календаря, слот не конфликтует с защищённым блоком стратегии.",
+      "draft": "Сделано без вас: участие в планёрке понедельника подтверждено, 10:00–10:30. Защищённый блок стратегии не задет."
+    },
+    {
+      "id": "offer",
+      "name": "Игорь Фёдоров",
+      "role": "HR-бизнес-партнёр",
+      "channel": "Почта",
+      "time": "10 дек · 10:50 · ×8",
+      "subject": "Кандидат на позицию аккаунт-менеджера",
+      "preview": "Финалист Сергей К., нужен ответ по офферу",
+      "status": "escalation",
+      "confidence": 0.99,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m012, m014",
+        "Профиль · кадры",
+        "Оргструктура · Игорь Фёдоров"
+      ],
+      "reason": "Оффер — кадровое решение и деньги. Только с подтверждением руководителя; Ася собрала контекст и черновик ответа.",
+      "draft": "Игорь, привет.\nПо Сергею К. — согласен, готовим оффер. Условия пришли на согласование до 9 декабря.\nИван"
+    },
+    {
+      "id": "egorov-crm",
+      "name": "Павел Егоров",
+      "role": "Ассистент руководителя",
+      "channel": "Почта",
+      "time": "9 дек · 13:51 · ×3",
+      "subject": "Доступ к CRM для нового сотрудника",
+      "preview": "Сергей К. — доступ после решения по офферу",
+      "status": "delegate",
+      "confidence": 0.94,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m025, m034",
+        "Оргструктура · Павел Егоров",
+        "Правило · доступы → ассистенту"
+      ],
+      "rule": "Передано ассистенту: доступ выдаётся после кадрового решения. Итог придёт в сводку, отдельного ответа руководителя не нужно.",
+      "draft": "Павел, привет.\nПо доступу Сергея К. — готовь после подтверждения оффера. Роли: CRM-оператор, календарь команды.\nИван"
+    },
+    {
+      "id": "orlov-partner",
+      "name": "Виктор Орлов",
+      "role": "Руководитель направления",
+      "channel": "Почта",
+      "time": "8 дек · 12:09 · ×5",
+      "subject": "Итоги встречи с партнёром",
+      "preview": "Как прошла встреча с «Облако Плюс» — коротко",
+      "status": "escalation",
+      "confidence": 0.95,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m017, m019",
+        "Профиль · письма руководству",
+        "Партнёр · «Облако Плюс»"
+      ],
+      "reason": "Письмо руководителя руководителя. Ответ даёт только Иван: Ася собрала факты из календаря и статуса партнёра, черновик готов.",
+      "draft": "Виктор, добрый день.\nВстреча с «Облако Плюс» прошла 8 декабря: договор на подписи у юристов, ждём до 12 декабря, блокеры — согласование скидки и доступ к CRM.\nС уважением, Иван Петров"
+    },
+    {
+      "id": "olga",
+      "name": "Ольга Смирнова",
+      "role": "Директор по продажам SMB",
+      "channel": "Почта",
+      "time": "7 дек · 15:14 · ×5",
+      "subject": "Прогноз выполнения плана декабря",
+      "preview": "94% плана, риск по двум сделкам",
+      "status": "digest",
+      "confidence": 0.93,
+      "sent": false,
+      "facts": [
+        "inbox.csv · m007, m011",
+        "tasks.csv · t001 просрочена"
+      ],
+      "rule": "Отчёт. Ответ не нужен: тема добавлена в утреннюю сводку 8:30, риск по двум сделкам выделен. Просроченное КП «ТехноСтрой» (t001) — отдельным пунктом.",
+      "draft": "В сводку 8:30: прогноз декабря — 94% плана, риск по двум сделкам. Просрочена задача t001 «КП для ТехноСтрой» (Ольга Смирнова)."
     }
   ];
 
@@ -2013,7 +2426,19 @@
     vcAsk(q, k);
   });
   $$("#vcQ .chip").forEach(chip => chip.addEventListener("click", () => vcAsk(chip.textContent.trim(), chip.dataset.vc)));
-  ["#videoBtn", "#videoBtn2", "#videoBtn3"].forEach(sel => { const b = $(sel); if (b) b.addEventListener("click", openVideo); });
+  ["#videoBtn", "#videoBtn2"].forEach(sel => { const b = $(sel); if (b) b.addEventListener("click", openVideo); });
+  {
+    const b = $("#videoBtn3");
+    if (b) {
+      b.title = "Открыть комнату Телемост в новой вкладке";
+      b.addEventListener("click", () => {
+        const d = linksData();
+        const url = (d && d.telemost) || DEMO_ROOMS.telemost || "";
+        if (url) window.open(url, "_blank", "noopener");
+        else openVideo();
+      });
+    }
+  }
   $("#vcClose").addEventListener("click", closeVideo);
   videoModal.addEventListener("click", e => { if (e.target === videoModal) closeVideo(); });
   document.addEventListener("keydown", e => {
@@ -2049,7 +2474,7 @@
     $("#cntDigest").textContent = items.filter(i => i.status === "digest").length;
     $("#cntIgnore").textContent = items.filter(i => i.status === "ignore").length;
     $("#cntAuto").textContent = items.filter(i => i.status === "auto").length;
-    $("#statDrafts").textContent = "16";
+    $("#statDrafts").textContent = "80";
     $("#statEsc").textContent = esc;
     $("#navInbox").textContent = esc;
   }
@@ -2193,85 +2618,611 @@
   const PROTO_KEY = "asistant.demo.protocols.v1";
   const PROTOCOLS = [
     {
-      id: "p1", date: "26 января", status: "approved", cal: 3, next: "понедельник, 10:00",
-      title: "Критерии типовых сделок и автоматизация",
-      source: "саммари встречи, 01-26",
-      decisions: [
-        "Порог типовой сделки — 500 тыс. ₽, для IPG — 750 тыс. ₽.",
-        "Два документа: правила для АМ и детализация по вендорам.",
-        "Digital принимает весь поток мелких заявок, ошибки разбираем после запуска.",
-        "«Железо» ведём отдельно от софта."
+      "id": "p1",
+      "date": "15 января",
+      "status": "review",
+      "next": "понедельник, 10:00",
+      "title": "Интеграция CRM: контрагенты, заказы, почта и сайт",
+      "source": "протокол № 01 · запись 36 мин 40 с",
+      "decisions": [
+        "Разбирать пункты по одному в логике карты результатов, не сводя задачу к потоку событий с сайта.",
+        "Передавать из 1С в CRM Softline решений юрлицо и контактные лица; организация создаётся и привязывается автоматически — примерно в 90 % случаев одно юрлицо соответствует одной организации.",
+        "Создавать возможные сделки на основании заказов покупателя из 1С — как для заказов с сайта, так и для заказов, созданных менеджерами Store вручную.",
+        "Реализовать второй, параллельный поток: Store → 1С → CRM Softline решений (заказы) и Store → CRM Softline решений напрямую, минуя 1С (запросы). Возражений у технической стороны нет."
       ],
-      tasks: [
-        { id: "t101", text: "Согласовать пороги с коммерческим директором", who: "Ольга Смирнова", due: "30.01", status: "done" },
-        { id: "t102", text: "Подготовить правила для АМ", who: "Павел Крылов", due: "02.02", status: "done" },
-        { id: "t103", text: "Описать поток мелких заявок в Digital", who: "Анна Петрова", due: "06.02", status: "work" }
+      "questions": [
+        {
+          "q": "Ресурс 1С — 0,5 ставки, разбитой на двух сотрудников",
+          "who": "Ольга Смирнова, руководство 1С"
+        },
+        {
+          "q": "Не определено, чья команда 1С делает доработки — от CRM Store или от Softline решений",
+          "who": "Иван Петров"
+        },
+        {
+          "q": "Команда 1С под финансовым департаментом, влияние ограничено",
+          "who": "Ольга Смирнова"
+        },
+        {
+          "q": "Действует запрет на передачу из 1С фактических цен и дат отгрузки",
+          "who": "Иван Петров, Алексей Новиков"
+        },
+        {
+          "q": "Почтовый поток: автосоздание интересов используется в нескольких местах",
+          "who": "Алексей Новиков"
+        },
+        {
+          "q": "Расхождение способов интеграции: REST и OData",
+          "who": "Технические команды"
+        },
+        {
+          "q": "Нет владельца фиксации договорённостей и срока оценки трудозатрат",
+          "who": "Иван Петров"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "01t1",
+          "text": "Подготовить концепцию технической реализации: 2–3 предложения по каждому блоку и понимание технической стороны",
+          "who": "Иван Петров, Алексей Новиков",
+          "due": "январь",
+          "status": "work"
+        },
+        {
+          "id": "01t2",
+          "text": "Сделать грубую оценку трудозатрат по блокам для авторизации MVP у Бутакова",
+          "who": "Иван Петров, Дмитрий Козлов",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "01t3",
+          "text": "Передать документацию по правилам обработки почты",
+          "who": "Анна Волкова, Екатерина Соколова",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "01t4",
+          "text": "Передать примеры документации запросов для прямого потока с сайта",
+          "who": "Сторона Store (Екатерина Соколова)",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "01t5",
+          "text": "Обсудить реализацию с командой 1С (у команды очередь задач)",
+          "who": "Иван Петров, Алексей Новиков",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "01t6",
+          "text": "Прислать материалы по итогам встречи",
+          "who": "Дмитрий Козлов",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "01t7",
+          "text": "Дать детали текущей интеграции 1С с CRM Store",
+          "who": "Игорь Фёдоров",
+          "due": "—",
+          "status": "done"
+        }
       ]
     },
     {
-      id: "p2", date: "4 июня", status: "approved", cal: 4, next: "вторник, 12:00",
-      title: "Digital 300: бюджет, методология прогнозов, метрики",
-      source: "саммари встречи, 06-04",
-      decisions: [
-        "Бюджет Digital 300 фиксируем на квартал, пересмотр — по фактике.",
-        "Прогноз считаем по трём сценариям, база — продления и мелкие сделки.",
-        "Метрики дашборда: воронка, конверсия, средний чек.",
-        "Отчёт по прогнозам — каждый вторник до 12:00.",
-        "Владелец методологии — аналитика продаж."
+      "id": "p2",
+      "date": "26 января",
+      "status": "approved",
+      "next": "вторник, 12:00",
+      "title": "Критерии типовых сделок и автоматизация",
+      "source": "протокол № 02 · запись 1 ч 03 мин",
+      "decisions": [
+        "Порог 500 тыс. руб. — для Москвы, регионов и Ки-команды; 750 тыс. руб. остаётся только для IPG. Пороги понижены по итогам согласования в пятницу.",
+        "Мотивация аккаунт-менеджера по типовой сделке — 1 %; при отработке силами ФЦП или поддержки продаж — 0 %. Расчёт — без CPQ, процент начисляется аккаунту.",
+        "Типовая сделка — только новые сделки, не продление, без договора, без отсрочек платежей и кредитных историй. Аккаунт-менеджер получает 1 %, если отрабатывает сделку сам.",
+        "Готовятся два документа. Первый — для согласования с директорами управления: общие правила и пороги. Второй — внутренний: детализация по вендорам, где требуется регистрация, и метрики замера эффекта."
       ],
-      tasks: [
-        { id: "t201", text: "Свести три сценария прогноза", who: "Анна Петрова", due: "11.06", status: "done" },
-        { id: "t202", text: "Обновить дашборд метрик", who: "Павел Крылов", due: "18.06", status: "work" },
-        { id: "t203", text: "Согласовать бюджет с финансовым блоком", who: "Иван Петров", due: "09.06", status: "late" },
-        { id: "t204", text: "Разослать шаблон отчёта по вторникам", who: "Ольга Смирнова", due: "16.06", status: "done" }
+      "questions": [
+        {
+          "q": "Критерии обоснованы только экономикой, не привязаны к нагрузке и скорости обработки",
+          "who": "Иван Петров, Сергей Морозов"
+        },
+        {
+          "q": "Сделки 250–500 тыс. руб. у части вендоров требуют регистрации",
+          "who": "Анна Волкова, Ольга Смирнова"
+        },
+        {
+          "q": "Треть–половина потока не отрабатывается, заявки не конвертируются в продажи",
+          "who": "Сергей Морозов"
+        },
+        {
+          "q": "Железо: Ольга Смирнова настаивает на отдельной ветке, Саша — на едином процессе",
+          "who": "Иван Петров"
+        },
+        {
+          "q": "Малые офисы в регионах и Сибири могут остаться без заработка",
+          "who": "не назначен"
+        },
+        {
+          "q": "Автоматизация после сделки невозможна из-за условий лицензий (B2B, Kaspersky, Astra, Киберпротект, Doctor Web)",
+          "who": "Сергей Морозов"
+        },
+        {
+          "q": "В CRM автоматическое создание сделки не работает",
+          "who": "не назначен"
+        },
+        {
+          "q": "Конфликт интересов: передача сделок и одновременная задача оптимизации команды Никитенко",
+          "who": "Иван Петров, Дмитрий Козлов"
+        },
+        {
+          "q": "Нет ответственного и срока по e-supply",
+          "who": "не назначен"
+        },
+        {
+          "q": "Не определён владелец метрики «сделка прошла по типовому процессу»",
+          "who": "Сергей Морозов"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "02t1",
+          "text": "Подготовить второй, внутренний документ: процесс, критерии, детализация по вендорам, метрики",
+          "who": "Анна Волкова, при участии Вани и Яны",
+          "due": "—",
+          "status": "done"
+        },
+        {
+          "id": "02t2",
+          "text": "Убрать аккаунт-менеджера из копии письма в схеме процесса",
+          "who": "Анна Волкова",
+          "due": "—",
+          "status": "done"
+        },
+        {
+          "id": "02t3",
+          "text": "Зафиксировать регламент на портале совместно с Шершовым",
+          "who": "Анна Волкова",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "02t4",
+          "text": "Уточнить у Ольги Смирновой список клиентов-исключений (3–5)",
+          "who": "Дмитрий Козлов",
+          "due": "—",
+          "status": "done"
+        },
+        {
+          "id": "02t5",
+          "text": "Согласовать документ с начальником",
+          "who": "Дмитрий Козлов",
+          "due": "до 30 числа",
+          "status": "done"
+        },
+        {
+          "id": "02t6",
+          "text": "Посмотреть письмо Насти, прислать материалы и статистику, детализировать 10 вендоров",
+          "who": "Ольга Смирнова",
+          "due": "завтра",
+          "status": "done"
+        },
+        {
+          "id": "02t7",
+          "text": "Подготовить предложения по внутренней коммуникации: общее письмо, затем шаги",
+          "who": "Ольга Смирнова",
+          "due": "—",
+          "status": "done"
+        },
+        {
+          "id": "02t8",
+          "text": "Передать Яне список ответственных, кто будет обрабатывать сделки",
+          "who": "Сергей Морозов",
+          "due": "завтра",
+          "status": "done"
+        },
+        {
+          "id": "02t9",
+          "text": "Подготовить драфт мотивации Digital и разослать участникам",
+          "who": "Сергей Морозов",
+          "due": "—",
+          "status": "done"
+        },
+        {
+          "id": "02t10",
+          "text": "Синхронизировать мотивацию, затем встреча с Ваней",
+          "who": "Сергей Морозов, Ольга Смирнова",
+          "due": "—",
+          "status": "done"
+        },
+        {
+          "id": "02t11",
+          "text": "Запланировать встречу по второму документу",
+          "who": "Иван Петров",
+          "due": "—",
+          "status": "done"
+        }
       ]
     },
     {
-      id: "p3", date: "14 июля", status: "approved", cal: 3, next: "четверг, 15:00",
-      title: "Архитектура проекта, бюджет и юридические вопросы",
-      source: "саммари встречи, 07-14",
-      decisions: [
-        "Целевая архитектура — единый контур данных, без ручных выгрузок.",
-        "Бюджет проекта утверждаем по этапам, юридика — до старта разработки.",
-        "Договор с подрядчиком готовит юридический отдел."
+      "id": "p3",
+      "date": "4 июня",
+      "status": "approved",
+      "next": "вторник, 12:00",
+      "title": "Digital 300: бюджет, методология прогнозов, метрики",
+      "source": "протокол № 03 · запись 57 мин",
+      "decisions": [
+        "Признак учёта Digital 300 — на уровне номенклатуры. Метрика по новым позициям и их продажам принимается в состав дашборда.",
+        "Провести отдельную встречу по методологии прогнозирования по трём потокам — Store, продления, мелкие сделки — с включением маркетолога в рабочую группу.",
+        "Дашборд обогащается в два этапа. Первый — метрики из подготовленного файла: 1,5 спринта, ориентировочно 2–3 недели, максимум 2 спринта с учётом технических проблем.",
+        "Прямые продажи и телесейлс в файл метрик не включаются, чтобы не смешивать источники. Пересечения между источниками допускаются только контролируемые."
       ],
-      tasks: [
-        { id: "t301", text: "Описать целевую архитектуру", who: "Павел Крылов", due: "21.07", status: "done" },
-        { id: "t302", text: "Согласовать договор с подрядчиком", who: "Ольга Смирнова", due: "28.07", status: "work" }
+      "questions": [
+        {
+          "q": "План по Digital 300 не принят ЦК по вендорам и цифрам",
+          "who": "Иван Петров, Сергей Морозов"
+        },
+        {
+          "q": "Нет сроков и ответственного за встречу по методологии прогноза",
+          "who": "Дмитрий"
+        },
+        {
+          "q": "Пять ключевых метрик не определены, есть расхождение подходов",
+          "who": "Иван Петров"
+        },
+        {
+          "q": "Смешивание источников данных",
+          "who": "Сергей Морозов, Мария Лебедева"
+        },
+        {
+          "q": "Нет сквозной аналитики по лидам",
+          "who": "Мария Лебедева, Павел Егоров"
+        },
+        {
+          "q": "Расхождение внутренних данных и цифр для руководства",
+          "who": "Дмитрий Козлов"
+        },
+        {
+          "q": "Срок 2–3 недели по техпроблемам условен",
+          "who": "Павел Егоров"
+        },
+        {
+          "q": "Не разделены Store и личный кабинет в метриках трафика",
+          "who": "Мария Лебедева"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "03t1",
+          "text": "Доработать признак на уровне номенклатуры для бюджета Digital 300",
+          "who": "команда 1С, разработчики 1С",
+          "due": "—",
+          "status": "work"
+        },
+        {
+          "id": "03t2",
+          "text": "Провести звонок по новым позициям после доработки 1С",
+          "who": "Сергей Морозов",
+          "due": "после 1С",
+          "status": "work"
+        },
+        {
+          "id": "03t3",
+          "text": "Организовать встречу по методологии прогнозирования с маркетологом",
+          "who": "не назначен",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "03t4",
+          "text": "Включить прогноз Digital 300 в план с приоритетом 3–4",
+          "who": "Дмитрий Козлов",
+          "due": "—",
+          "status": "done"
+        },
+        {
+          "id": "03t5",
+          "text": "Сравнить файл прогноза от 3 июня с дашбордом и сообщить о расхождениях",
+          "who": "Дмитрий Козлов",
+          "due": "—",
+          "status": "work"
+        },
+        {
+          "id": "03t6",
+          "text": "Закрыть файл метрик, устранить технические проблемы",
+          "who": "команда, Павел Егоров",
+          "due": "2–3 нед.",
+          "status": "work"
+        },
+        {
+          "id": "03t7",
+          "text": "Исправить расчёт роста маржи Total Digital (+7 000 %)",
+          "who": "не назначен",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "03t8",
+          "text": "Завершить корректировку актуальности данных дашборда",
+          "who": "не назначен",
+          "due": "5 июня",
+          "status": "work"
+        },
+        {
+          "id": "03t9",
+          "text": "Определить и согласовать пять ключевых метрик верхнего уровня",
+          "who": "Иван Петров, Дмитрий Козлов",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "03t10",
+          "text": "Разослать ссылку на дашборд и порядок доступа через Helpdesk",
+          "who": "Мария Лебедева",
+          "due": "—",
+          "status": "work"
+        }
       ]
     },
     {
-      id: "p4", date: "25 августа", status: "approved", cal: 5, next: "пятница, 11:00",
-      title: "Анализ ЭТП и стратегия размещения ПО",
-      source: "саммари встречи, 08-25",
-      decisions: [
-        "Приоритет — две площадки с наибольшим потоком заявок.",
-        "Размещение ПО на ЭТП — поэтапно, с проверкой требований.",
-        "Мониторинг заявок — еженедельно, владелец — отдел продаж.",
-        "Отказ от площадок без конверсии — после двух кварталов."
+      "id": "p4",
+      "date": "14 июля",
+      "status": "approved",
+      "next": "четверг, 15:00",
+      "title": "Архитектура проекта, бюджет и юридические вопросы",
+      "source": "протокол № 04 · запись 12 мин 40 с",
+      "decisions": [
+        "Стоимость касается только отрисовки архитектуры, а не реализации проекта.",
+        "В бюджет не заложены расходы на облако и лицензии продуктов типа МТС Линка; интеграции заложены, включая стриминг (строка 8 плана).",
+        "Заключается рамочный договор на услуги с приложениями-спецификациями на конкретные работы. Первая позиция — разработка архитектуры; рамку и первую позицию готовы подписывать.",
+        "Работы и заключение договора идут параллельно. Ориентировочный срок подписания и первых оплат — конец июля — первая неделя августа."
       ],
-      tasks: [
-        { id: "t401", text: "Подготовить сравнение площадок", who: "Анна Петрова", due: "01.09", status: "done" },
-        { id: "t402", text: "Проверить требования ЭТП", who: "Павел Крылов", due: "08.09", status: "work" },
-        { id: "t403", text: "Настроить еженедельный мониторинг", who: "Ольга Смирнова", due: "15.09", status: "done" }
+      "questions": [
+        {
+          "q": "Не определено, кто и когда пришлёт данные по МТС Линк",
+          "who": "Иван Петров"
+        },
+        {
+          "q": "Общая стоимость проекта и стоимость архитектуры в цифрах не названы",
+          "who": "Иван Петров, Мария Лебедева"
+        },
+        {
+          "q": "Выбор облака не сделан, стоимость зависит от числа команд",
+          "who": "клиент"
+        },
+        {
+          "q": "Объём стриминга не определён: один канал или десять",
+          "who": "клиент"
+        },
+        {
+          "q": "Формулировка услуги и статья расходов не закрыты",
+          "who": "Мария Лебедева"
+        },
+        {
+          "q": "Ответственный за договорной процесс не определён однозначно",
+          "who": "Иван Петров"
+        },
+        {
+          "q": "Часть обсуждения потеряна из-за обрыва связи",
+          "who": "все участники"
+        },
+        {
+          "q": "Перечень опций под конференцию не зафиксирован",
+          "who": "клиент"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "04t1",
+          "text": "Прислать в группу перечень доступных формулировок услуг и ОКВЭД",
+          "who": "Мария Лебедева",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "04t2",
+          "text": "Провести договор через внутренние службы, выяснить необходимость дополнительных проверок",
+          "who": "Мария Лебедева",
+          "due": "до подписи",
+          "status": "work"
+        },
+        {
+          "id": "04t3",
+          "text": "Обеспечить внутренний процесс заключения договора",
+          "who": "Иван Петров",
+          "due": "до подписи",
+          "status": "work"
+        },
+        {
+          "id": "04t4",
+          "text": "Предоставить информацию по МТС Линк",
+          "who": "клиент, имя не названо",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "04t5",
+          "text": "Подготовить материалы по архитектуре",
+          "who": "исполнитель архитектуры",
+          "due": "3–4 дня",
+          "status": "open"
+        },
+        {
+          "id": "04t6",
+          "text": "Подготовить дорожную карту презентационных материалов: брифинг по категориям партнёров, драфт",
+          "who": "Анна Волкова",
+          "due": "—",
+          "status": "work"
+        },
+        {
+          "id": "04t7",
+          "text": "Согласовать проводку так, чтобы она была удобна Softline и попадала в ОКВЭД",
+          "who": "бухгалтерия, имя не названо",
+          "due": "—",
+          "status": "open"
+        }
       ]
     },
     {
-      id: "p5", date: "сентябрь", status: "review", cal: 2, next: "после утверждения",
-      title: "Интеграция CRM и единая картина клиента",
-      source: "саммари встречи, интеграция CRM",
-      decisions: [
-        "CRM — единый источник по клиенту и сделке.",
-        "Заказы из мессенджеров заводятся в CRM вручную до автоматизации.",
-        "Единая картина клиента — к концу квартала."
+      "id": "p5",
+      "date": "25 августа",
+      "status": "approved",
+      "next": "пятница, 11:00",
+      "title": "Анализ ЭТП и стратегия размещения ПО",
+      "source": "протокол № 05 · запись 1 ч 08 мин",
+      "decisions": [
+        "Разграничение — по закупкам малого объёма (ЗМО): команда Никитенко работает по своим заявкам, команда проекта — по категории ЗМО.",
+        "Получить оферту через доступ Елизаветы Алябьевой и передать на анализ юристам; зафиксировать точный путь к категории ПО и вести отдельную колонку вендоров и ПО; изучить тарифы — возможна разовая оплата закупки или оплата за год.",
+        "Под своим логином посмотреть, что подписано, и скачать условия; из регламентов извлечь перечень документов, которые нужно подписать (допускается обработка через ИИ); выяснить, реагирует ли команда Никитенко на такие заявки; держать в работе контакт Кости Ермолина.",
+        "Изучить инструкцию к следующему звонку, сверить выводы; доисследовать наличие целевых категорий и ЗМО; рассмотреть регистрацию как поставщика для изучения функционала."
       ],
-      tasks: [
-        { id: "t501", text: "Сверить поля клиента в CRM и 1С", who: "Павел Крылов", due: "30.09", status: "review" },
-        { id: "t502", text: "Описать ручной ввод заказов", who: "Анна Петрова", due: "05.10", status: "review" }
+      "questions": [
+        {
+          "q": "Логины тендерного департамента на 9 из 15 площадок не выдаются",
+          "who": "Дмитрий Козлов, Екатерина Соколова"
+        },
+        {
+          "q": "Прямое противоречие позиций: «прямые конкуренты» и «лейте каталоги, мы не против»",
+          "who": "Екатерина Соколова"
+        },
+        {
+          "q": "Фид по ПО для Сбермаркета не настроен, требования утеряны",
+          "who": "Анна Волкова, Екатерина Соколова"
+        },
+        {
+          "q": "Номенклатура не связана с УКПД-2, решение не принято",
+          "who": "Екатерина Соколова, бухгалтерия"
+        },
+        {
+          "q": "Ресурсы команды Александра Смирнова по СБРБП не подтверждены",
+          "who": "Дмитрий Козлов"
+        },
+        {
+          "q": "ЛПР площадок недоступны, обращения замыкаются на общую поддержку",
+          "who": "Дмитрий Козлов, Анна Волкова"
+        },
+        {
+          "q": "Нестабильный микрофон у Ани, проблемы накапливаются между звонками",
+          "who": "Анна Волкова"
+        },
+        {
+          "q": "По «Весне» и реестру маркетплейсов нет решения по участию",
+          "who": "Екатерина Соколова"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "05t1",
+          "text": "Приоритизировать «Сбербиблиотеку» и заливку каталога",
+          "who": "Екатерина Соколова",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "05t2",
+          "text": "Зафиксировать путь к категории ПО и колонку вендоров на B2B-центре",
+          "who": "Анна Волкова",
+          "due": "к звонку",
+          "status": "work"
+        },
+        {
+          "id": "05t3",
+          "text": "Получить оферту B2B-центра через Елизавету Алябьеву и передать юристам",
+          "who": "Анна Волкова",
+          "due": "—",
+          "status": "work"
+        },
+        {
+          "id": "05t4",
+          "text": "Извлечь из регламентов РТС условия подписания, проверить реакцию команды Никитенко на заявки",
+          "who": "Анна Волкова",
+          "due": "к звонку",
+          "status": "work"
+        },
+        {
+          "id": "05t5",
+          "text": "Изучить инструкцию Текторга и сверить выводы",
+          "who": "Екатерина Соколова",
+          "due": "к звонку",
+          "status": "work"
+        },
+        {
+          "id": "05t6",
+          "text": "Организовать звонок с Андреем Никитенко по разграничению работы",
+          "who": "Екатерина Соколова, Екатерина Соколова, Анна Волкова",
+          "due": "вторник",
+          "status": "work"
+        },
+        {
+          "id": "05t7",
+          "text": "Организовать звонок с Натальей Кисель по категории ПО",
+          "who": "Анна Волкова",
+          "due": "чт/пт",
+          "status": "work"
+        },
+        {
+          "id": "05t8",
+          "text": "Найти требования к фиду по ПО, при отсутствии — запросить повторно",
+          "who": "Анна Волкова",
+          "due": "—",
+          "status": "work"
+        },
+        {
+          "id": "05t9",
+          "text": "Подготовить аналитику и бриф к звонку по «Северстали»",
+          "who": "Анна Волкова",
+          "due": "до звонка",
+          "status": "work"
+        },
+        {
+          "id": "05t10",
+          "text": "Подключить заявку Оли Курсиновой и запросить статус юристов по Сбермаркету",
+          "who": "Екатерина Соколова",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "05t11",
+          "text": "Настроить фид по ПО после получения требований",
+          "who": "Екатерина Соколова, разработка",
+          "due": "после требований",
+          "status": "open"
+        },
+        {
+          "id": "05t12",
+          "text": "Договариваться о встрече с ЛПР MaxMark",
+          "who": "Дмитрий Козлов",
+          "due": "сентябрь",
+          "status": "work"
+        },
+        {
+          "id": "05t13",
+          "text": "Уточнить ресурсы и таймлайн по СБРБП",
+          "who": "Дмитрий Козлов",
+          "due": "—",
+          "status": "open"
+        },
+        {
+          "id": "05t14",
+          "text": "Согласовать слот встречи с ЦПП РУС и пригласить участников",
+          "who": "Дмитрий Козлов",
+          "due": "—",
+          "status": "work"
+        },
+        {
+          "id": "05t15",
+          "text": "Определить необходимость настройки соответствия УКПД-2",
+          "who": "Екатерина Соколова",
+          "due": "—",
+          "status": "open"
+        }
       ]
     }
   ];
-  const PROTO_STATUS = { done: ["готово", "sent"], work: ["в работе", "live"], late: ["просрочено", "escalation"], review: ["на проверке", "draft"] };
+  const PROTO_STATUS = { done: ["готово", "sent"], work: ["в работе", "live"], late: ["просрочено", "escalation"], review: ["на проверке", "draft"], open: ["открыто", ""] };
   let protoExpanded = new Set(["p1"]);
   let protoFilter = "all";
   function protoDone() {
@@ -2283,16 +3234,16 @@
     const all = PROTOCOLS.flatMap(p => p.tasks);
     $("#protoCount").textContent = PROTOCOLS.length;
     $("#protoTasks").textContent = all.length;
-    $("#protoOpen").textContent = all.filter(t => { const s = protoStatus(t); return s === "work" || s === "late"; }).length;
-    $("#protoCal").textContent = PROTOCOLS.reduce((n, p) => n + p.cal, 0);
-    const openCount = PROTOCOLS.filter(p => p.tasks.some(t => { const s = protoStatus(t); return s === "work" || s === "late"; })).length;
+    $("#protoOpen").textContent = all.filter(t => { const s = protoStatus(t); return s === "work" || s === "late" || s === "open"; }).length;
+    $("#protoQs").textContent = PROTOCOLS.reduce((n, p) => n + p.questions.length, 0);
+    const openCount = PROTOCOLS.filter(p => p.tasks.some(t => { const s = protoStatus(t); return s === "work" || s === "late" || s === "open"; })).length;
     const reviewCount = PROTOCOLS.filter(p => p.status === "review").length;
     $('#protoChips [data-proto-filter="all"]').textContent = "Все " + PROTOCOLS.length;
     $('#protoChips [data-proto-filter="open"]').textContent = "С открытыми " + openCount;
     $('#protoChips [data-proto-filter="review"]').textContent = "На проверке " + reviewCount;
     const list = PROTOCOLS.filter(p => {
       if (protoFilter === "review") return p.status === "review";
-      if (protoFilter === "open") return p.tasks.some(t => { const s = protoStatus(t); return s === "work" || s === "late"; });
+      if (protoFilter === "open") return p.tasks.some(t => { const s = protoStatus(t); return s === "work" || s === "late" || s === "open"; });
       return true;
     });
     $("#protoList").innerHTML = list.map(p => {
@@ -2304,7 +3255,7 @@
       return `<div class="proto-row">
         <button class="proto-head" data-proto-toggle="${p.id}" type="button" aria-expanded="${open}">
           <span class="proto-date">${p.date}</span>
-          <span class="proto-main"><b>${p.title}</b><small>${p.decisions.length} ${plural(p.decisions.length, ["решение", "решения", "решений"])} · ${p.tasks.length} ${plural(p.tasks.length, ["поручение", "поручения", "поручений"])} · ${p.cal} ${plural(p.cal, ["встреча", "встречи", "встреч"])} в календаре</small></span>
+          <span class="proto-main"><b>${p.title}</b><small>${p.decisions.length} ${plural(p.decisions.length, ["решение", "решения", "решений"])} · ${p.tasks.length} ${plural(p.tasks.length, ["поручение", "поручения", "поручений"])} · ${p.questions.length} ${plural(p.questions.length, ["открытый вопрос", "открытых вопроса", "открытых вопросов"])}</small></span>
           <span class="proto-side">${pBadge}<i>${doneN} из ${p.tasks.length} готово</i></span>
         </button>
         ${open ? `<div class="proto-body">
@@ -2319,6 +3270,10 @@
             return `<tr><td>${t.text}</td><td>${t.who}</td><td>${t.due}</td>
               <td><span class="badge ${cls}">${label}</span> <button class="btn ghost mini" data-proto-task="${t.id}" type="button">${action}</button></td></tr>`;
           }).join("")}
+          </tbody></table></div>
+          <div class="p-sec">Открытые вопросы</div>
+          <div style="overflow-x:auto"><table class="proto-tasks"><thead><tr><th>Вопрос / риск</th><th>Владелец</th></tr></thead><tbody>
+          ${p.questions.map(q => `<tr><td>${q.q}</td><td>${q.who}</td></tr>`).join("")}
           </tbody></table></div>
           <div class="p-foot">Источник: ${p.source}. Следующая сверка — ${p.next}.</div>
         </div>` : ""}
@@ -2355,8 +3310,840 @@
   });
   $("#protoGoPlan").addEventListener("click", () => showView("plan"));
 
+  /* ---------- данные новых вкладок (из API датасета) ---------- */
+const CRM_CONTACTS = [
+    {
+      "name": "Клиент «Ромашка-Ритейл»",
+      "email": "client1@romashka.example",
+      "role": "Клиент",
+      "ext": true,
+      "letters": 4,
+      "topics": [
+        "обязательства_клиентам"
+      ],
+      "last": "2026-12-11 15:31",
+      "lastSubject": "Сроки запуска интеграции",
+      "action": "на решение руководителя",
+      "item": "romashka"
+    },
+    {
+      "name": "Клиент «ТехноСтрой»",
+      "email": "client2@tehnostroy.example",
+      "role": "Клиент",
+      "ext": true,
+      "letters": 4,
+      "topics": [
+        "продажи"
+      ],
+      "last": "2026-12-11 11:58",
+      "lastSubject": "Запрос коммерческого предложения",
+      "action": "делегировано",
+      "item": "tehnostroy"
+    },
+    {
+      "name": "Организаторы конференции",
+      "email": "events@conf.example",
+      "role": "Приглашение",
+      "ext": true,
+      "letters": 4,
+      "topics": [
+        "приглашение"
+      ],
+      "last": "2026-12-10 14:07",
+      "lastSubject": "Приглашение спикером на конференцию",
+      "action": "на решение руководителя",
+      "item": "conf"
+    },
+    {
+      "name": "Рассылка вендора",
+      "email": "news@vendor.example",
+      "role": "Рассылка",
+      "ext": true,
+      "letters": 8,
+      "topics": [
+        "рассылка"
+      ],
+      "last": "2026-12-11 14:47",
+      "lastSubject": "Новости продуктов за декабрь",
+      "action": "проигнорировано по правилу",
+      "item": "vendor"
+    },
+    {
+      "name": "Алексей Новиков",
+      "email": "p07@company.example",
+      "role": "Подчинённый",
+      "ext": false,
+      "letters": 6,
+      "topics": [
+        "отчёт"
+      ],
+      "last": "2026-12-11 08:04",
+      "lastSubject": "Дашборд продаж обновлён",
+      "action": "в сводку",
+      "item": "novikov-dash"
+    },
+    {
+      "name": "Анна Волкова",
+      "email": "p04@company.example",
+      "role": "Подчинённый",
+      "ext": false,
+      "letters": 3,
+      "topics": [
+        "календарь"
+      ],
+      "last": "2026-12-11 10:08",
+      "lastSubject": "Перенос встречи по e-com на среду",
+      "action": "закрыто автоматически",
+      "item": "anna"
+    },
+    {
+      "name": "Виктор Орлов",
+      "email": "p09@company.example",
+      "role": "Руководитель",
+      "ext": false,
+      "letters": 10,
+      "topics": [
+        "руководство"
+      ],
+      "last": "2026-12-11 15:09",
+      "lastSubject": "Подготовить тезисы к совету директоров",
+      "action": "на решение руководителя",
+      "item": "orlov-board"
+    },
+    {
+      "name": "Екатерина Соколова",
+      "email": "p08@company.example",
+      "role": "Подчинённый",
+      "ext": false,
+      "letters": 2,
+      "topics": [
+        "календарь"
+      ],
+      "last": "2026-12-10 10:52",
+      "lastSubject": "Подтвердите участие в планёрке",
+      "action": "закрыто автоматически",
+      "item": "sokolova-planerka"
+    },
+    {
+      "name": "Игорь Фёдоров",
+      "email": "p11@company.example",
+      "role": "Коллега",
+      "ext": false,
+      "letters": 8,
+      "topics": [
+        "кадры"
+      ],
+      "last": "2026-12-10 10:50",
+      "lastSubject": "Кандидат на позицию аккаунт-менеджера",
+      "action": "на решение руководителя",
+      "item": "offer"
+    },
+    {
+      "name": "Мария Лебедева",
+      "email": "p06@company.example",
+      "role": "Подчинённый",
+      "ext": false,
+      "letters": 8,
+      "topics": [
+        "кадры",
+        "клиенты"
+      ],
+      "last": "2026-12-11 16:13",
+      "lastSubject": "Отпуск сотрудника сервиса 20–30 декабря",
+      "action": "на решение руководителя",
+      "item": "vacation"
+    },
+    {
+      "name": "Наталья Павлова",
+      "email": "p10@company.example",
+      "role": "Коллега",
+      "ext": false,
+      "letters": 6,
+      "topics": [
+        "деньги"
+      ],
+      "last": "2026-12-10 11:43",
+      "lastSubject": "Перераспределение бюджета Q1",
+      "action": "на решение руководителя",
+      "item": "budget"
+    },
+    {
+      "name": "Ольга Смирнова",
+      "email": "p02@company.example",
+      "role": "Подчинённый",
+      "ext": false,
+      "letters": 7,
+      "topics": [
+        "отчёт",
+        "деньги"
+      ],
+      "last": "2026-12-11 16:16",
+      "lastSubject": "Скидка 12% для «Ромашка-Ритейл» — нужно согласование",
+      "action": "на решение руководителя",
+      "item": "smirnova-discount"
+    },
+    {
+      "name": "Павел Егоров",
+      "email": "p12@company.example",
+      "role": "Коллега",
+      "ext": false,
+      "letters": 3,
+      "topics": [
+        "доступы"
+      ],
+      "last": "2026-12-09 13:51",
+      "lastSubject": "Доступ к CRM для нового сотрудника",
+      "action": "делегировано",
+      "item": "egorov-crm"
+    },
+    {
+      "name": "Сергей Морозов",
+      "email": "p05@company.example",
+      "role": "Подчинённый",
+      "ext": false,
+      "letters": 7,
+      "topics": [
+        "статус"
+      ],
+      "last": "2026-12-11 17:32",
+      "lastSubject": "Статус по партнёру «Облако Плюс»",
+      "action": "в сводку",
+      "item": "morozov-cloud"
+    }
+  ];
+  const JOURNAL_EVENTS = [
+    {
+      "at": "28.11 · 09:24",
+      "iso": "2026-11-28T09:24:46",
+      "kind": "mailbox_password",
+      "k": "Пароль почты",
+      "text": "Обновлён пароль приложения почты (mb6472a1)"
+    },
+    {
+      "at": "28.11 · 09:08",
+      "iso": "2026-11-28T09:08:16",
+      "kind": "mailbox_password",
+      "k": "Пароль почты",
+      "text": "Обновлён пароль приложения почты (mb6472a1)"
+    },
+    {
+      "at": "28.11 · 00:57",
+      "iso": "2026-11-28T00:57:08",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Zoom · ссылка сохранена, приложение"
+    },
+    {
+      "at": "28.11 · 00:54",
+      "iso": "2026-11-28T00:54:26",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 3 поручения за 117 с · минута #8"
+    },
+    {
+      "at": "28.11 · 00:48",
+      "iso": "2026-11-28T00:48:48",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Zoom · ссылка сохранена, приложение"
+    },
+    {
+      "at": "28.11 · 00:36",
+      "iso": "2026-11-28T00:36:59",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 6 поручений за 131 с · минута #7"
+    },
+    {
+      "at": "28.11 · 00:34",
+      "iso": "2026-11-28T00:34:01",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Zoom · ссылка сохранена"
+    },
+    {
+      "at": "28.11 · 00:31",
+      "iso": "2026-11-28T00:31:53",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Телемост · ссылка сохранена"
+    },
+    {
+      "at": "28.11 · 00:31",
+      "iso": "2026-11-28T00:31:53",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Zoom · ссылка сохранена"
+    },
+    {
+      "at": "27.11 · 22:33",
+      "iso": "2026-11-27T22:33:18",
+      "kind": "run",
+      "k": "Прогон",
+      "text": "Прогон: 80 писем · 54 черновика · 5 протоколов · 0 автоотправок"
+    },
+    {
+      "at": "27.11 · 22:07",
+      "iso": "2026-11-27T22:07:40",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 6 поручений за 134 с · минута #6 · канал zoom"
+    },
+    {
+      "at": "27.11 · 22:03",
+      "iso": "2026-11-27T22:03:08",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 6 поручений за 130 с · минута #5 · канал zoom"
+    },
+    {
+      "at": "27.11 · 19:21",
+      "iso": "2026-11-27T19:21:37",
+      "kind": "run",
+      "k": "Прогон",
+      "text": "Прогон: 80 писем · 54 черновика · 5 протоколов · 0 автоотправок"
+    },
+    {
+      "at": "27.11 · 19:04",
+      "iso": "2026-11-27T19:04:58",
+      "kind": "mailbox_add",
+      "k": "Почта добавлена",
+      "text": "Добавлена почта · Mail.ru (mbc032b0)"
+    },
+    {
+      "at": "27.11 · 18:53",
+      "iso": "2026-11-27T18:53:50",
+      "kind": "run",
+      "k": "Прогон",
+      "text": "Прогон: 80 писем · 54 черновика · 5 протоколов · 0 автоотправок"
+    },
+    {
+      "at": "27.11 · 18:14",
+      "iso": "2026-11-27T18:14:53",
+      "kind": "telemost_link",
+      "k": "Ссылка Телемост",
+      "text": "Ссылка Телемост · «Планёрка с Асей»"
+    },
+    {
+      "at": "27.11 · 18:14",
+      "iso": "2026-11-27T18:14:48",
+      "kind": "zoom_link",
+      "k": "Ссылка Zoom",
+      "text": "Ссылка Zoom · «Планёрка с Асей»"
+    },
+    {
+      "at": "27.11 · 17:59",
+      "iso": "2026-11-27T17:59:24",
+      "kind": "telemost_link",
+      "k": "Ссылка Телемост",
+      "text": "Ссылка Телемост · «Планёрка с Асей»"
+    },
+    {
+      "at": "27.11 · 17:54",
+      "iso": "2026-11-27T17:54:59",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 0 поручений за 15 с · минута #4"
+    },
+    {
+      "at": "27.11 · 17:50",
+      "iso": "2026-11-27T17:50:18",
+      "kind": "mailbox_add",
+      "k": "Почта добавлена",
+      "text": "Добавлена почта · Gmail (mb6472a1)"
+    },
+    {
+      "at": "27.11 · 17:50",
+      "iso": "2026-11-27T17:50:03",
+      "kind": "run",
+      "k": "Прогон",
+      "text": "Прогон: 80 писем · 54 черновика · 5 протоколов · 0 автоотправок"
+    },
+    {
+      "at": "27.11 · 17:48",
+      "iso": "2026-11-27T17:48:39",
+      "kind": "mailbox_remove",
+      "k": "Почта удалена",
+      "text": "Удалена почта (mb280937)"
+    },
+    {
+      "at": "27.11 · 17:48",
+      "iso": "2026-11-27T17:48:16",
+      "kind": "mailbox_add",
+      "k": "Почта добавлена",
+      "text": "Добавлена почта · Gmail (mb280937)"
+    },
+    {
+      "at": "27.11 · 17:37",
+      "iso": "2026-11-27T17:37:11",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Zoom · ссылка сохранена"
+    },
+    {
+      "at": "27.11 · 17:26",
+      "iso": "2026-11-27T17:26:26",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Телемост · ссылка сохранена"
+    },
+    {
+      "at": "27.11 · 16:59",
+      "iso": "2026-11-27T16:59:01",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Телемост · ссылка сохранена"
+    },
+    {
+      "at": "27.11 · 16:57",
+      "iso": "2026-11-27T16:57:26",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 6 поручений за 207 с · минута #3 · канал telemost"
+    },
+    {
+      "at": "27.11 · 16:57",
+      "iso": "2026-11-27T16:57:16",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Телемост"
+    },
+    {
+      "at": "27.11 · 16:55",
+      "iso": "2026-11-27T16:55:26",
+      "kind": "meeting_join",
+      "k": "Подключение к встрече",
+      "text": "Подключение к встрече Телемост · ссылка сохранена"
+    },
+    {
+      "at": "27.11 · 16:38",
+      "iso": "2026-11-27T16:38:51",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 4 поручения за 16 с"
+    },
+    {
+      "at": "27.11 · 16:37",
+      "iso": "2026-11-27T16:37:25",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 4 поручения за 16 с"
+    },
+    {
+      "at": "27.11 · 16:35",
+      "iso": "2026-11-27T16:35:02",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 4 поручения за 16 с"
+    },
+    {
+      "at": "27.11 · 16:33",
+      "iso": "2026-11-27T16:33:35",
+      "kind": "meeting",
+      "k": "Разбор встречи",
+      "text": "Разбор встречи: 4 поручения за 25 с"
+    },
+    {
+      "at": "27.11 · 15:49",
+      "iso": "2026-11-27T15:49:00",
+      "kind": "channel_link",
+      "k": "Канал",
+      "text": "Канал Телемост: удалён"
+    },
+    {
+      "at": "27.11 · 15:49",
+      "iso": "2026-11-27T15:49:00",
+      "kind": "channel_link",
+      "k": "Канал",
+      "text": "Канал Zoom: удалён"
+    },
+    {
+      "at": "27.11 · 15:48",
+      "iso": "2026-11-27T15:48:51",
+      "kind": "zoom_link",
+      "k": "Ссылка Zoom",
+      "text": "Ссылка Zoom · «Планёрка с Асей»"
+    },
+    {
+      "at": "27.11 · 15:48",
+      "iso": "2026-11-27T15:48:38",
+      "kind": "channel_link",
+      "k": "Канал",
+      "text": "Канал Zoom: сохранён"
+    },
+    {
+      "at": "27.11 · 15:48",
+      "iso": "2026-11-27T15:48:22",
+      "kind": "telemost_link",
+      "k": "Ссылка Телемост",
+      "text": "Ссылка Телемост · «Проверка ссылки»"
+    },
+    {
+      "at": "27.11 · 15:48",
+      "iso": "2026-11-27T15:48:07",
+      "kind": "channel_link",
+      "k": "Канал",
+      "text": "Канал Телемост: сохранён"
+    },
+    {
+      "at": "27.11 · 13:32",
+      "iso": "2026-11-27T13:32:01",
+      "kind": "mailbox_remove",
+      "k": "Почта удалена",
+      "text": "Удалена почта (mb59b005)"
+    },
+    {
+      "at": "27.11 · 13:30",
+      "iso": "2026-11-27T13:30:42",
+      "kind": "mailbox_add",
+      "k": "Почта добавлена",
+      "text": "Добавлена почта · свой сервер (mb59b005)"
+    },
+    {
+      "at": "27.11 · 12:55",
+      "iso": "2026-11-27T12:55:25",
+      "kind": "run",
+      "k": "Прогон",
+      "text": "Прогон: 80 писем · 54 черновика · 5 протоколов · 0 автоотправок"
+    },
+    {
+      "at": "27.11 · 12:39",
+      "iso": "2026-11-27T12:39:15",
+      "kind": "task",
+      "k": "Задача из протокола",
+      "text": "Задача из протокола 2026-01-15: подготовить концепцию технической реализации на основе обсуждения. (Егор, Иван)"
+    },
+    {
+      "at": "27.11 · 10:19",
+      "iso": "2026-11-27T10:19:28",
+      "kind": "approve",
+      "k": "Подтверждение отправки",
+      "text": "Подтверждена отправка d-m001 · демо-режим"
+    },
+    {
+      "at": "27.11 · 10:17",
+      "iso": "2026-11-27T10:17:42",
+      "kind": "run",
+      "k": "Прогон",
+      "text": "Прогон: 80 писем · 54 черновика · 5 протоколов · 0 автоотправок"
+    },
+    {
+      "at": "27.11 · 00:54",
+      "iso": "2026-11-27T00:54:22",
+      "kind": "run",
+      "k": "Прогон",
+      "text": "Прогон: 80 писем · 54 черновика · 5 протоколов · 0 автоотправок"
+    }
+  ];
+  const JOURNAL_RUNS = [
+    {
+      "id": 7,
+      "at": "27.11 · 22:33",
+      "profile": "Иван Петров",
+      "dataset": "data/kuznitsa",
+      "emails": 80,
+      "drafts": 54,
+      "protocols": 5,
+      "auto": 0
+    },
+    {
+      "id": 6,
+      "at": "27.11 · 19:21",
+      "profile": "Иван Петров",
+      "dataset": "data/kuznitsa",
+      "emails": 80,
+      "drafts": 54,
+      "protocols": 5,
+      "auto": 0
+    },
+    {
+      "id": 5,
+      "at": "27.11 · 18:53",
+      "profile": "Иван Петров",
+      "dataset": "data/kuznitsa",
+      "emails": 80,
+      "drafts": 54,
+      "protocols": 5,
+      "auto": 0
+    },
+    {
+      "id": 4,
+      "at": "27.11 · 17:50",
+      "profile": "Иван Петров",
+      "dataset": "data/kuznitsa",
+      "emails": 80,
+      "drafts": 54,
+      "protocols": 5,
+      "auto": 0
+    },
+    {
+      "id": 3,
+      "at": "27.11 · 12:55",
+      "profile": "Иван Петров",
+      "dataset": "data/kuznitsa",
+      "emails": 80,
+      "drafts": 54,
+      "protocols": 5,
+      "auto": 0
+    },
+    {
+      "id": 2,
+      "at": "27.11 · 10:17",
+      "profile": "Иван Петров",
+      "dataset": "data/kuznitsa",
+      "emails": 80,
+      "drafts": 54,
+      "protocols": 5,
+      "auto": 0
+    },
+    {
+      "id": 1,
+      "at": "27.11 · 00:54",
+      "profile": "Иван Петров",
+      "dataset": "data/kuznitsa",
+      "emails": 80,
+      "drafts": 54,
+      "protocols": 5,
+      "auto": 0
+    }
+  ];
+
+/* ---------- задачи: сводка по протоколам ---------- */
+let taskFilter = "all";
+const TASK_FILTERS = { all: "Все", work: "В работе", open: "Открытые", done: "Готово" };
+function taskRowsAll() {
+  return PROTOCOLS.flatMap(p => p.tasks.map(t => ({ t, p })));
+}
+function renderTasks() {
+  const rows = taskRowsAll();
+  const cnt = { all: rows.length, work: 0, open: 0, done: 0 };
+  rows.forEach(r => { const s = protoStatus(r.t); cnt[s] = (cnt[s] || 0) + 1; });
+  $("#taskAll").textContent = cnt.all;
+  $("#taskWork").textContent = cnt.work;
+  $("#taskOpen").textContent = cnt.open;
+  $("#taskDone").textContent = cnt.done;
+  $("#navTasks").textContent = cnt.all;
+  $$("#taskChips [data-task-filter]").forEach(c => {
+    const k = c.dataset.taskFilter;
+    c.textContent = TASK_FILTERS[k] + " " + (cnt[k] || 0);
+  });
+  const list = rows.filter(r => taskFilter === "all" ? true : protoStatus(r.t) === taskFilter);
+  $("#taskRows").innerHTML = list.map(({ t, p }) => {
+    const s = protoStatus(t);
+    const [label, cls] = PROTO_STATUS[s] || PROTO_STATUS.open;
+    return `<tr><td>${t.text}</td><td><span class="task-src">${p.date}</span></td><td>${t.who}</td><td>${t.due}</td>
+      <td><span class="badge ${cls}">${label}</span> <button class="btn ghost mini" data-task-mark="${t.id}" type="button">${s === "done" ? "вернуть" : "готово"}</button></td></tr>`;
+  }).join("") || `<tr><td colspan="5" style="color:var(--muted);font-size:12px">В этом фильтре поручений нет.</td></tr>`;
+}
+$("#taskChips").addEventListener("click", e => {
+  const chip = e.target.closest("[data-task-filter]");
+  if (!chip) return;
+  taskFilter = chip.dataset.taskFilter;
+  $$("#taskChips .chip").forEach(c => c.classList.toggle("on", c === chip));
+  renderTasks();
+});
+$("#taskRows").addEventListener("click", e => {
+  const btn = e.target.closest("[data-task-mark]");
+  if (!btn) return;
+  const tid = btn.dataset.taskMark;
+  const task = PROTOCOLS.flatMap(p => p.tasks).find(t => t.id === tid);
+  if (!task) return;
+  const state = protoDone();
+  const next = protoStatus(task) === "done" ? "work" : "done";
+  state[tid] = next;
+  try { localStorage.setItem(PROTO_KEY, JSON.stringify(state)); }
+  catch (err) { toast("Не сохранилось", "Браузер запретил localStorage: отметка останется до перезагрузки."); }
+  renderTasks();
+  toast(next === "done" ? "Поручение готово" : "Поручение возвращено в работу", "Изменение сохранено только в этом браузере и учтено в сводке.");
+});
+
+/* ---------- CRM: контакты из переписки ---------- */
+let crmFilter = "all";
+let crmSel = null;
+const CRM_MONTHS = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+function crmFmt(ts) {
+  const parts = String(ts).split(" ");
+  if (parts.length < 2) return ts;
+  const d = parts[0].split("-").map(Number);
+  return `${d[2]} ${CRM_MONTHS[d[1] - 1]} · ${parts[1].slice(0, 5)}`;
+}
+function renderCrm() {
+  const list = CRM_CONTACTS.filter(c => crmFilter === "all" ? true : crmFilter === "ext" ? c.ext : !c.ext);
+  if (!crmSel || !list.some(c => c.name === crmSel)) crmSel = list.length ? list[0].name : null;
+  $("#crmList").innerHTML = list.map(c => `<button class="crm-row ${c.name === crmSel ? "on" : ""}" data-crm="${c.name}" type="button">${avaOf(c.name)}<div><b>${c.name}</b><small>${c.lastSubject}</small></div><em>${c.letters} писем</em></button>`).join("");
+  const c = CRM_CONTACTS.find(x => x.name === crmSel);
+  $("#crmCard").innerHTML = c ? `
+    <div class="crm-hero">${avaOf(c.name, "lg")}<div><h3>${c.name}</h3><small>${c.role} · ${c.email}</small></div></div>
+    <dl class="crm-kv">
+      <dt>Писем в базе</dt><dd>${c.letters}</dd>
+      <dt>Темы</dt><dd>${c.topics.join(" · ")}</dd>
+      <dt>Последнее письмо</dt><dd>${crmFmt(c.last)} · «${c.lastSubject}»</dd>
+      <dt>Решение Аси</dt><dd>${c.action}</dd>
+    </dl>
+    <div class="mini-actions" style="margin-top:12px">
+      ${c.item ? `<button class="btn primary small" data-crm-open="${c.item}" type="button">Показать письма</button>` : ""}
+      <button class="btn ghost small" data-crm-msg="${c.name}" type="button">Написать в Telegram</button>
+    </div>` : `<div class="dist-note">Выберите контакт слева.</div>`;
+}
+$("#crmChips").addEventListener("click", e => {
+  const chip = e.target.closest("[data-crm-filter]");
+  if (!chip) return;
+  crmFilter = chip.dataset.crmFilter;
+  $$("#crmChips .chip").forEach(c => c.classList.toggle("on", c === chip));
+  renderCrm();
+});
+$("#crmList").addEventListener("click", e => {
+  const row = e.target.closest("[data-crm]");
+  if (!row) return;
+  crmSel = row.dataset.crm;
+  renderCrm();
+});
+$("#crmCard").addEventListener("click", e => {
+  const open = e.target.closest("[data-crm-open]");
+  if (open) {
+    showView("inbox");
+    selectItem(open.dataset.crmOpen, true);
+    return;
+  }
+  const msg = e.target.closest("[data-crm-msg]");
+  if (msg) {
+    showView("msgs");
+    selectThreadByName(msg.dataset.crmMsg);
+  }
+});
+
+/* ---------- сообщения: личные чаты Telegram ---------- */
+const MSG_THREADS = [
+  { name: "Сергей Морозов", role: "Руководитель направления", unread: 2, time: "17:32", msgs: [
+    { who: "them", time: "17:28", text: "Иван, по «Облаку Плюс» юристы вернулись: готовы к встрече на следующей неделе." },
+    { who: "them", time: "17:32", text: "Могу собрать вторник или четверг после 15:00. Подтвердишь слот — отправлю приглашение?" }
+  ]},
+  { name: "Мария Лебедева", role: "Руководитель HR", unread: 1, time: "16:13", msgs: [
+    { who: "them", time: "16:13", text: "По отпуску сотрудника сервиса 20–30 декабря нужен ответ до пятницы: ищем замену или переносим задачи?" },
+    { who: "me", time: "16:20", text: "Посмотрю загрузку команды и вернусь сегодня." }
+  ]},
+  { name: "Виктор Орлов", role: "Коммерческий директор", unread: 0, time: "15:09", msgs: [
+    { who: "them", time: "15:09", text: "Тезисы к совету директоров жду до вторника. Нужны цифры по марже и план по типовым сделкам." },
+    { who: "me", time: "15:14", text: "Соберу черновик к понедельнику." }
+  ]},
+  { name: "Екатерина Соколова", role: "Аккаунт-менеджер", unread: 1, time: "11:41", msgs: [
+    { who: "them", time: "11:41", text: "Документ по вендорам готов, отправила на согласование. Пороги 500 и 750 тыс. внесла." },
+    { who: "me", time: "11:55", text: "Спасибо, посмотрю до конца дня." }
+  ]},
+  { name: "Ольга Смирнова", role: "Руководитель направления SMB", unread: 2, time: "10:16", msgs: [
+    { who: "them", time: "10:12", text: "Иван, привет. По «Ромашке-Ритейл» просят скидку 12% — расчёт отправила в почту." },
+    { who: "them", time: "10:16", text: "Если согласуем до пятницы, успеваем подписать до конца года. На что опираться в обосновании?" }
+  ]},
+  { name: "Анна Волкова", role: "Руководитель e-commerce", unread: 1, time: "10:08", msgs: [
+    { who: "them", time: "10:08", text: "Планёрку по e-com перенесла на среду, 10:00. Календарь обновила." },
+    { who: "me", time: "10:20", text: "Принято." }
+  ]},
+  { name: "Алексей Новиков", role: "Руководитель аналитики", unread: 2, time: "08:04", msgs: [
+    { who: "them", time: "08:01", text: "Дашборд продаж обновил: добавил воронку по регионам и разрез по вендорам." },
+    { who: "them", time: "08:04", text: "Ссылку скинул в почту. Если ок — завтра вынесу на планёрку." }
+  ]},
+  { name: "Дмитрий Козлов", role: "Руководитель проектов", unread: 0, time: "вчера", msgs: [
+    { who: "them", time: "18:40", text: "Материалы по итогам встречи в почте, протокол № 01 приложил." },
+    { who: "me", time: "18:52", text: "Вижу, спасибо." }
+  ]}
+];
+let msgSel = 0;
+function msgUnreadTotal() { return MSG_THREADS.reduce((n, t) => n + t.unread, 0); }
+function renderMsgThreads() {
+  $("#msgThreads").innerHTML = MSG_THREADS.map((t, i) => {
+    const last = t.msgs[t.msgs.length - 1];
+    return `<button class="thread ${i === msgSel ? "on" : ""}" data-thread="${i}" type="button">${avaOf(t.name)}
+      <div><b>${t.name}</b><small>${last.who === "me" ? "Вы: " : ""}${last.text}</small></div>
+      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><time>${t.time}</time>${t.unread ? `<i class="un">${t.unread}</i>` : ""}</span></button>`;
+  }).join("");
+}
+function renderMsgChat() {
+  const t = MSG_THREADS[msgSel];
+  if (!t) return;
+  $("#msgHead").innerHTML = `${avaOf(t.name, "md")}<div><b>${t.name}</b><small>${t.role} · Telegram</small></div><span class="badge ${t.unread ? "draft" : "sent"}">${t.unread ? t.unread + " новых" : "прочитано"}</span>`;
+  $("#msgLog").innerHTML = t.msgs.map(m => {
+    const cls = m.who === "me" ? "user" : "bot";
+    const meta = m.who === "me" ? "Вы" : m.who === "asya" ? "Ася · черновик" : t.name;
+    return `<div class="msg ${cls}"><div class="meta">${meta} · ${m.time}</div>${escHtml(m.text)}</div>`;
+  }).join("");
+  $("#msgLog").scrollTop = $("#msgLog").scrollHeight;
+}
+function renderMsgs() {
+  renderMsgThreads();
+  renderMsgChat();
+  const u = msgUnreadTotal();
+  $("#msgUnread").textContent = u;
+  $("#navMsgs").textContent = u || "0";
+}
+function selectThreadByName(name) {
+  const idx = MSG_THREADS.findIndex(t => t.name === name);
+  if (idx < 0) {
+    toast("Чата нет", "С этим контактом ещё нет переписки в Telegram — начать её можно в рабочей системе.");
+    return;
+  }
+  msgSel = idx;
+  MSG_THREADS[idx].unread = 0;
+  renderMsgs();
+}
+$("#msgThreads").addEventListener("click", e => {
+  const b = e.target.closest("[data-thread]");
+  if (!b) return;
+  msgSel = Number(b.dataset.thread);
+  MSG_THREADS[msgSel].unread = 0;
+  renderMsgs();
+});
+$("#msgForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const input = $("#msgInput");
+  const val = input.value.trim();
+  if (!val) return;
+  const t = MSG_THREADS[msgSel];
+  t.msgs.push({ who: "me", time: "сейчас", text: val });
+  t.msgs.push({ who: "asya", time: "сейчас", text: `Черновик для ${t.name}: «${val}». Отправлю после вашего подтверждения — автоответов 0.` });
+  input.value = "";
+  renderMsgChat();
+  toast("Черновик готов", "Ася подготовила ответ в этом чате. Отправка — только после подтверждения.");
+});
+
+/* ---------- журнал действий ---------- */
+const JR_GROUPS = { run: ["run"], meet: ["meeting", "meeting_join"], mail: ["mailbox_add", "mailbox_remove", "mailbox_password"], link: ["channel_link", "telemost_link", "zoom_link"], task: ["task", "approve"] };
+const JR_NAMES = { all: "Все", run: "Прогоны", meet: "Встречи", mail: "Почты", link: "Ссылки", task: "Задачи" };
+let jrFilter = "all";
+function renderJournal() {
+  $("#jrTotal").textContent = JOURNAL_EVENTS.length;
+  $$("#jrChips [data-jr-filter]").forEach(c => {
+    const k = c.dataset.jrFilter;
+    const n = k === "all" ? JOURNAL_EVENTS.length : JOURNAL_EVENTS.filter(e => JR_GROUPS[k].includes(e.kind)).length;
+    c.textContent = JR_NAMES[k] + " " + n;
+  });
+  const evs = JOURNAL_EVENTS.filter(e => jrFilter === "all" ? true : JR_GROUPS[jrFilter].includes(e.kind));
+  $("#jrList").innerHTML = evs.map(e => `<div class="jr-ev"><time>${e.at}</time><span class="k">${e.k}</span><span>${escHtml(e.text)}</span></div>`).join("") || `<div class="dist-note" style="margin-top:8px">Событий этого типа нет.</div>`;
+  $("#jrRuns").innerHTML = JOURNAL_RUNS.map(r => `<div class="jr-run"><div><b>#${r.id}</b> · ${r.at}<br><small>${r.profile} · ${r.dataset}</small></div><span>${r.emails} писем<br>${r.drafts} черновика</span></div>`).join("");
+}
+$("#jrChips").addEventListener("click", e => {
+  const chip = e.target.closest("[data-jr-filter]");
+  if (!chip) return;
+  jrFilter = chip.dataset.jrFilter;
+  $$("#jrChips .chip").forEach(c => c.classList.toggle("on", c === chip));
+  renderJournal();
+});
+$("#jrCsv").addEventListener("click", () => {
+  const rows = [["Время", "Тип", "Событие"]].concat(JOURNAL_EVENTS.map(e => [e.at, e.k, e.text]));
+  const csv = rows.map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "asistant-journal.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  toast("CSV готов", `${JOURNAL_EVENTS.length} событий выгружены. В рабочей системе — /api/journal.csv.`);
+});
+
   /* ---------- вкладки ---------- */
-  const views = { inbox: $("#view-inbox"), meet: $("#view-meet"), protocols: $("#view-protocols"), plan: $("#view-plan"), bot: $("#view-bot"), econ: $("#view-econ"), links: $("#view-links") };
+  const views = { inbox: $("#view-inbox"), meet: $("#view-meet"), protocols: $("#view-protocols"), tasks: $("#view-tasks"), crm: $("#view-crm"), msgs: $("#view-msgs"), journal: $("#view-journal"), plan: $("#view-plan"), bot: $("#view-bot"), econ: $("#view-econ"), links: $("#view-links") };
   function showView(name) {
     Object.entries(views).forEach(([k, el]) => { el.hidden = k !== name; });
     $$(".nav-btn").forEach(b => b.classList.toggle("on", b.dataset.view === name));
@@ -2366,6 +4153,10 @@
       setAvatar(meeting.status === "distributed" ? "smile" : "think", meeting.status === "distributed" ? "Задачи переданы" : "Разбираю встречу");
     }
     if (name === "protocols") { renderProtocols(); setAvatar("smile", "Собрала протоколы"); }
+    if (name === "tasks") { renderTasks(); setAvatar("smile", "Собрала задачи"); }
+    if (name === "crm") { renderCrm(); setAvatar("smile", "Знаю контакты"); }
+    if (name === "msgs") { renderMsgs(); setAvatar("smile", "Читаю сообщения"); }
+    if (name === "journal") { renderJournal(); setAvatar("idle", "Журнал действий"); }
     if (name === "plan") { renderPlan(); setAvatar("smile", "Сверила план"); }
     if (name === "bot") setAvatar("smile", "Готова помочь");
     if (name === "econ") setAvatar("smile", "Считаю экономику");
@@ -2869,6 +4660,12 @@
 
   /* ---------- связи: свои каналы (localStorage, без секретов) ---------- */
   const LINKS_KEY = "asistant.demo.links.v1";
+  /* реальные комнаты для демо: вставлены по решению владельца 28.11 */
+  const DEMO_ROOMS = {
+    zoom: "https://us05web.zoom.us/j/4751978381?pwd=bj9DYx42rJYMyr7gupu75FG0X2x9Oe.1",
+    telemost: "https://telemost.yandex.ru/j/12227618580937",
+    tg: ""
+  };
   const MAIL_HINTS = {
     gmail: "Gmail: imap.gmail.com:993, smtp.gmail.com:465, пароль приложения Google",
     yandex: "Яндекс: imap.yandex.ru:993, smtp.yandex.ru:465, пароль приложения",
@@ -2880,6 +4677,7 @@
   const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
   const isZoomUrl = v => /^https:\/\/([a-z0-9-]+\.)*zoom\.us\/(j|my|s)\/[^\s]+$/i.test(v);
   const isTmUrl = v => /^https:\/\/telemost\.yandex\.(ru|com)\/j\/[^\s]+$/i.test(v);
+  const isTgUrl = v => /^https:\/\/(t|telegram)\.me\/[A-Za-z0-9_+\/?=&.\-]+$/i.test(v);
   const linkId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const escHtml = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const tgKind = k => k === "bot" ? "бот" : "аккаунт";
@@ -2903,6 +4701,13 @@
       changed = true;
     }
     ["mails", "tgs", "gen"].forEach(k => { if (!Array.isArray(d[k])) { d[k] = []; changed = true; } });
+    if (!d.seeded) {
+      d.seeded = 1;
+      if (!d.zoom && DEMO_ROOMS.zoom) d.zoom = DEMO_ROOMS.zoom;
+      if (!d.telemost && DEMO_ROOMS.telemost) d.telemost = DEMO_ROOMS.telemost;
+      if (!d.tgUrl && DEMO_ROOMS.tg) d.tgUrl = DEMO_ROOMS.tg;
+      changed = true;
+    }
     if (changed) { try { localStorage.setItem(LINKS_KEY, JSON.stringify(d)); } catch (e) {} }
     return d;
   }
@@ -3071,6 +4876,9 @@
     $("#linkTmUrl").value = tm;
     linkBadge("#linkTmBadge", !!tm, tm ? "сохранена" : "не задано");
     linkState("#linkTmState", tm, "");
+    const tgUrl = d.tgUrl || "";
+    $("#linkTgUrl").value = tgUrl;
+    linkState("#linkTgUrlState", tgUrl ? tgUrl : "Ссылка t.me сохраняется в этом браузере и открывается в новой вкладке.", tgUrl ? "ok" : "");
     renderGenList(d);
   }
   $("#linkMailAdd").addEventListener("click", () => {
@@ -3207,6 +5015,7 @@
   }
   bindRoom("zoom", "#linkZoomUrl", "#linkZoomState", "#linkZoomSave", "#linkZoomOpen", isZoomUrl, "https://zoom.us/j/… или https://zoom.us/my/…");
   bindRoom("telemost", "#linkTmUrl", "#linkTmState", "#linkTmSave", "#linkTmOpen", isTmUrl, "https://telemost.yandex.ru/j/…");
+  bindRoom("tgUrl", "#linkTgUrl", "#linkTgUrlState", "#linkTgSave", "#linkTgOpen", isTgUrl, "https://t.me/…");
   const rndDigits = n => { let s = ""; for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 10); return s; };
   const demoPwd = () => Math.random().toString(36).slice(2, 10);
   function addGen(provider, url) {
@@ -3243,12 +5052,13 @@
     linkState("#linkZoomAuth", "Открываю окно Zoom… (демо)", "");
     setTimeout(() => linkState("#linkZoomAuth", "Проверяю доступ и создаю комнату… (демо)", ""), 650);
     setTimeout(() => {
-      const url = "https://zoom.us/j/" + rndDigits(11) + "?pwd=" + demoPwd();
-      linksStore({ zoomConn: { connected: true, account: "аккаунт руководителя", at: new Date().toISOString() }, zoom: url, zoomDemo: true });
-      addGen("zoom", url);
+      const real = !!DEMO_ROOMS.zoom;
+      const url = real ? DEMO_ROOMS.zoom : "https://zoom.us/j/" + rndDigits(11) + "?pwd=" + demoPwd();
+      linksStore({ zoomConn: { connected: true, account: "аккаунт руководителя", at: new Date().toISOString() }, zoom: url, zoomDemo: !real });
+      if (!real) addGen("zoom", url);
       btn.disabled = false;
-      linkState("#linkZoomState", "Комната создана для подключённого аккаунта (демо) и добавлена в список ссылок.", "ok");
-      toast("Zoom подключён (демо)", "Показан демонстрационный вход. Настоящий OAuth выполняет локальный дашборд — ключи и токены на стенд не попадают.");
+      linkState("#linkZoomState", real ? "Комната аккаунта подключена: она открывается кнопкой «Открыть»." : "Комната создана для подключённого аккаунта (демо) и добавлена в список ссылок.", "ok");
+      toast("Zoom подключён", real ? "Ссылка комнаты взята из аккаунта — откройте её кнопкой «Открыть»." : "Показан демонстрационный вход. Настоящий OAuth выполняет локальный дашборд — ключи и токены на стенд не попадают.");
     }, 1400);
   });
   $("#linkZoomDisconnect").addEventListener("click", () => {
