@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AsiStantAI — Ася · материалы сдачи</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#A63A2B">
+<style>
+  :root{
+    --cream:#FBF1E3; --paper:#FFF9F0; --terracotta:#A63A2B; --terracotta-dark:#7E2A1F;
+    --chestnut:#33201A; --muted:#7A6156; --gold:#C2954A; --line:#E8D6BF; --sand:#F3E3CE;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--chestnut);
+       font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;line-height:1.55}
+  a{color:inherit}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 24px 56px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+  .mark{width:40px;height:40px;border-radius:11px;background:var(--terracotta);color:#fff;
+        display:grid;place-items:center;font:700 22px Georgia,serif}
+  .brand b{font:700 19px Georgia,serif;letter-spacing:.2px}
+  .brand span{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .hero{display:grid;grid-template-columns:1.35fr .65fr;gap:28px;align-items:center;
+        background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:30px;margin-bottom:22px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--terracotta);font-weight:700}
+  h1{font:700 40px/1.1 Georgia,serif;margin:8px 0 10px}
+  .lead{font-size:16px;color:var(--muted);margin:0 0 20px;max-width:560px}
+  .load{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px;margin:0 0 18px;font-size:14px;color:var(--muted)}
+  .load b{color:var(--chestnut);font-weight:700}
+  .load .dot{color:var(--line)}
+  .portrait{width:100%;max-width:250px;display:block;margin:0 auto;border-radius:18px;border:1px solid var(--line)}
+  .hero-video{width:100%;display:block;border-radius:18px;border:1px solid var(--line);background:#1a120c;aspect-ratio:16/10;object-fit:cover}
+  .hero-video-note{font-size:12px;color:var(--muted);text-align:center;margin:8px 0 0}
+  .actions{display:flex;flex-wrap:wrap;gap:10px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;
+       text-decoration:none;font-weight:600;font-size:14px;border:1px solid transparent;transition:.15s}
+  .btn.primary{background:var(--terracotta);color:#fff}
+  .btn.primary:hover{background:var(--terracotta-dark)}
+  .btn.ghost{background:#fff;border-color:var(--line);color:var(--chestnut)}
+  .btn.ghost:hover{border-color:var(--gold)}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 22px}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .stat b{display:block;font:700 26px Georgia,serif}
+  .stat span{font-size:12px;color:var(--muted)}
+  .grid.econ .stat b{font-size:clamp(19px,2.05vw,23px);white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .grid.econ .stat b .rub{font-size:.74em;letter-spacing:0;color:inherit;font-weight:700}
+  @media (max-width:640px){.grid.econ .stat b{font-size:22px;white-space:normal}}
+  .calc{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0 12px}
+  .calc th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;
+           font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .calc td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .calc td:first-child{font-weight:600;white-space:nowrap}
+  .calc td:not(:first-child){white-space:nowrap}
+  .calc b{color:var(--terracotta-dark)}
+  .calc tr.total td{background:var(--sand);border-bottom:0;font-weight:700}
+  @media (max-width:760px){.calc-wrap{overflow-x:auto}.calc{min-width:620px}}
+  section{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:24px;margin-bottom:18px}
+  h2{font:700 22px Georgia,serif;margin:0 0 4px}
+  .sub{font-size:13px;color:var(--muted);margin:0 0 16px}
+  .files{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .file{display:flex;justify-content:space-between;align-items:center;gap:12px;
+        padding:12px 14px;border:1px solid var(--line);border-radius:12px;text-decoration:none;background:#fff}
+  .file:hover{border-color:var(--gold);background:#FFFDF9}
+  .file .name{font-weight:600;font-size:14px}
+  .file .meta{font-size:12px;color:var(--muted)}
+  .file .size{font-size:12px;color:var(--muted);white-space:nowrap}
+  .links{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .note{font-size:13px;color:var(--muted)}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--sand);
+         color:var(--terracotta-dark);font-size:12px;font-weight:700}
+  footer{border-top:1px solid var(--line);margin-top:8px;padding-top:18px;font-size:12px;color:var(--muted)}
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr}
+    .portrait{max-width:200px}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .files{grid-template-columns:1fr}
+    h1{font-size:32px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark">A</div>
+    <div class="brand"><b>AsiStantAI</b><span>Ася · цифровой аватар</span></div>
+  </header>
+
+  <div class="hero">
+    <div>
+      <div class="kicker">ИИкузница 2026 · трек «Цифровой аватар»</div>
+      <h1>ИИ-помощник руководителя</h1>
+      <p class="lead">Пишет от первого лица — отправляете только вы. Разбирает почту по правилам,
+        готовит черновики и дайджест, ведёт встречу и собирает протокол. Ноль автоотправок.</p>
+      <p class="load"><span>Нагрузка руководителя:</span> <b>50–100</b> писем в день <span class="dot">·</span> <b>25–40</b> встреч в неделю</p>
+      <div class="actions">
+        <a class="btn primary" href="https://asistant.159-69-106-165.sslip.io/demo/">Открыть демо</a>
+        <a class="btn ghost" href="https://asistant.159-69-106-165.sslip.io/files/Hakaton-2026-11-28-v19.zip">Скачать комплект</a>
+        <a class="btn ghost" href="https://asistant.159-69-106-165.sslip.io/files/AsiStantAI-demo-2m43s.mp4">Смотреть ролик 2:43</a>
+      </div>
+    </div>
+    <div>
+      <video class="hero-video" controls preload="metadata" playsinline
+             poster="https://asistant.159-69-106-165.sslip.io/demo/assets/asya-a.jpg" src="https://asistant.159-69-106-165.sslip.io/files/AsiStantAI-demo-2m43s.mp4">
+        Ваш браузер не показывает видео — <a href="https://asistant.159-69-106-165.sslip.io/files/AsiStantAI-demo-2m43s.mp4">скачайте ролик 2:43</a>.
+      </video>
+      <p class="hero-video-note">Демо 2:43 — черновики, звонок с сотрудником и протокол</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="stat"><b>80/80</b><span>писем разобрано верно</span></div>
+    <div class="stat"><b>54</b><span>черновика со ссылками на факты</span></div>
+    <div class="stat"><b>0</b><span>отправок без человека</span></div>
+    <div class="stat"><b>119</b><span>автотестов зелёные</span></div>
+  </div>
+
+  <section>
+    <h2>Материалы сдачи</h2>
+    <p class="sub">Полный комплект — в одном архиве; отдельно лежат презентация, питч, ролик, протоколы и расчёт.</p>
+    <div class="files">
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/Hakaton-2026-11-28-v19.zip">
+        <span><span class="name">Комплект целиком (ZIP)</span><br><span class="meta">код, система с календарём двух недель (у каждой встречи — прошлый протокол и задачи), презентация, документы, полные протоколы, входные данные и транскрипты</span></span>
+        <span class="size">25,8 МБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/AsiStantAI-deck-red7.pdf">
+        <span><span class="name">Презентация, ред. 7</span><br><span class="meta">17 слайдов, PDF</span></span>
+        <span class="size">970 КБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/AsiStantAI-deck-red7.pptx">
+        <span><span class="name">Презентация, ред. 7</span><br><span class="meta">17 слайдов, PowerPoint</span></span>
+        <span class="size">5,1 МБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/Pitch-3min-v6.pdf">
+        <span><span class="name">Питч на 3 минуты</span><br><span class="meta">версия 6, PDF</span></span>
+        <span class="size">138 КБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/Pitch-3min-v6.docx">
+        <span><span class="name">Питч на 3 минуты</span><br><span class="meta">версия 6, Word</span></span>
+        <span class="size">44 КБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/AsiStantAI-demo-2m43s.mp4">
+        <span><span class="name">Демо продукта</span><br><span class="meta">2 мин 43 с, H.264/AAC</span></span>
+        <span class="size">16,8 МБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/Protokoly-vstrech-5.zip">
+        <span><span class="name">Протоколы встреч</span><br><span class="meta">5 протоколов с повесткой, поручениями и рисками</span></span>
+        <span class="size">757 КБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/Raschet-Iikuznica-2026.xlsx">
+        <span><span class="name">Расчёт стоимости</span><br><span class="meta">шаблон организаторов, заполнен</span></span>
+        <span class="size">57 КБ</span></a>
+      <a class="file" href="https://asistant.159-69-106-165.sslip.io/files/README.md">
+        <span><span class="name">README</span><br><span class="meta">как открыть и что внутри</span></span>
+        <span class="size">29 КБ</span></a>
+      <a class="file" href="https://github.com/ngoncharovaaa-oss/asistant-ai">
+        <span><span class="name">Публичный репозиторий</span><br><span class="meta">github.com/ngoncharovaaa-oss/asistant-ai</span></span>
+        <span class="size">GitHub</span></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Что внутри демо</h2>
+    <p class="sub">Рабочая система на синтетическом датасете ИИкузницы: 80 писем, 50 встреч, 12 задач.</p>
+    <p class="note">Вход: образ Аси или своё фото (обрабатывается в браузере). Дальше — лента обращений,
+      черновик с подтверждением, сцена «Ася ведёт встречу» с автопротоколом, пять протоколов архива (50 поручений и 41 открытый вопрос), план дня и недели,
+      живые каналы (IMAP/SMTP, Telegram, Zoom, Телемост), экономика и журнал действий.
+      <span class="badge">0 автоотправок</span> <span class="badge">секретов нет</span></p>
+    <div class="links">
+      <a class="btn primary" href="https://asistant.159-69-106-165.sslip.io/demo/">Открыть демо</a>
+      <a class="btn ghost" href="https://asistant.159-69-106-165.sslip.io/files/README.md">Инструкция</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Экономика</h2>
+    <p class="sub">Демо-неделя — 350 обращений и 175 черновиков; на полной нагрузке 50–100 писем в день — 525–1 050 черновиков; ставка 2 500 ₽/час.</p>
+    <div class="grid econ">
+      <div class="stat"><b>175</b><span>черновиков в месяц на демо-неделе</span></div>
+      <div class="stat"><b>69 221 <span class="rub">₽</span></b><span>экономия в месяц (79%)</span></div>
+      <div class="stat"><b>276 882 <span class="rub">₽</span></b><span>экономия при 700 черновиках</span></div>
+      <div class="stat"><b>104,5 <span class="rub">₽</span></b><span>за черновик против 500 ₽ вручную</span></div>
+    </div>
+    <div class="calc-wrap">
+    <table class="calc">
+      <thead><tr><th>Контур</th><th>Объём в месяц</th><th>Вручную</th><th>С Асей</th><th>Экономия</th></tr></thead>
+      <tbody>
+        <tr><td>Демо-неделя</td><td>350 писем → 175 черновиков</td><td>87 500 ₽</td><td>18 279 ₽</td><td><b>69 221 ₽</b></td></tr>
+        <tr><td>Полная нагрузка</td><td>1 050–2 100 писем → 525–1 050 черновиков</td><td>262 500–525 000 ₽</td><td>54 859–109 713 ₽</td><td><b>207 641–415 287 ₽</b></td></tr>
+        <tr><td>Встречи</td><td>105–168 протоколов</td><td>43 750–70 000 ₽</td><td>8 750–14 000 ₽</td><td><b>35 000–56 000 ₽</b></td></tr>
+        <tr class="total"><td>Итого</td><td>демо-неделя / полная нагрузка с встречами</td><td>87 500 / 306 250–595 000 ₽</td><td>18 279 / 63 609–123 713 ₽</td><td><b>69 221 / 242 641–471 287 ₽</b></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">Ставка 2 500 ₽/час; автодоля 50%; письмо вручную — 12 мин, проверка черновика — 2 мин; протокол вручную — 10 мин, проверка — 2 мин; инфраструктура 3 500 ₽ на 175 черновиков, токены 196 ₽. Внедрение 100 000 ₽ окупается за 1,4 мес на демо-неделе и за 0,2–0,4 мес на полной нагрузке; 9 черновиков покрывают инфраструктуру и токены. Детальный расчёт — в XLSX и в живой вкладке «Экономика» демо.</p>
+  </section>
+
+  <footer>
+    AsiStantAI · Ася · ИИкузница 2026. Демо и материалы — на синтетических данных; пароли, токены и сессии
+    в комплект не входят. Стенд доступен 28.11 10:00 — 3.12 23:59.
+  </footer>
+</div>
+</body>
+</html>
