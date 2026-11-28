@@ -1524,6 +1524,7 @@
           <button class="chip" data-expr="talk" type="button">Говорит</button>
         </div>
         <div class="video-links">
+          <button class="btn primary small video-link" id="videoBtn5" type="button">Поговорить с Асей голосом</button>
           <button class="btn ghost small video-link" id="videoBtn3" type="button">Видеозвонок · Телемост</button>
           <button class="btn ghost small video-link" id="videoBtn4" type="button">Видеозвонок · Zoom</button>
         </div>
@@ -2452,6 +2453,13 @@
         if (url) window.open(url, "_blank", "noopener");
         else openVideo();
       });
+    }
+  }
+  {
+    const b = $("#videoBtn5");
+    if (b) {
+      b.title = "Живой аватар: голос, субтитры и вопросы в окне";
+      b.addEventListener("click", openVideo);
     }
   }
   $("#vcClose").addEventListener("click", closeVideo);
