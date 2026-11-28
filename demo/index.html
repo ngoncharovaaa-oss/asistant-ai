@@ -116,6 +116,13 @@
   .channel b{display:block;font-size:12px}
   .channel small{display:block;font-size:10px;color:var(--muted);line-height:1.3}
   .channel em{font-style:normal;font-size:9px;letter-spacing:.1em;color:var(--terra)}
+  .channel[data-go]{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .channel[data-go]:hover{border-color:#D3AE94;box-shadow:0 1px 0 rgba(166,58,43,.08)}
+  .channel[data-go]:focus-visible{outline:2px solid rgba(166,58,43,.45);outline-offset:2px}
+  .channel[data-go] em::after{content:"›";display:inline-block;margin-left:3px;opacity:0;transform:translateX(-2px);transition:opacity .15s,transform .15s}
+  .channel[data-go]:hover em::after,.channel[data-go]:focus-visible em::after{opacity:1;transform:translateX(0)}
+  .flash{animation:flashTarget 1.7s ease}
+  @keyframes flashTarget{0%,100%{box-shadow:none}22%{box-shadow:0 0 0 3px rgba(166,58,43,.35)}70%{box-shadow:0 0 0 3px rgba(166,58,43,.12)}}
 
   .nav{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:12px}
   .nav-btn{
@@ -558,6 +565,9 @@
   .md-draft-label{font-size:9.5px;color:var(--muted);margin-bottom:3px}
   .md-draft pre{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:10.5px;line-height:1.45;color:var(--ink);margin:0}
   .md-note{font-size:9.5px;line-height:1.45;color:var(--muted);margin-top:7px}
+  .md-form-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px}
+  .md-form-row small{font-size:10px;color:var(--muted)}
+  .md-formed{font-size:9.5px;color:#5C6B3B;margin-top:2px}
   .link-save-done{color:#5C6B3B}
   .rule-row{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #EDDFCC}
   .rule-row:last-of-type{border-bottom:0}
@@ -817,8 +827,8 @@
 
       <div class="side-block">
         <div class="side-title">Каналы <span>allow-list</span></div>
-        <div class="channel"><span class="ico">@</span><div><b>Outlook · почта</b><small id="chMailSmall">80 писем за неделю · 16 сегодня</small></div><em>ON</em></div>
-        <div class="channel"><span class="ico">TG</span><div><b>Telegram</b><small id="chTgSmall">Bot API · 2 chat_id</small></div><em>ON</em></div>
+        <div class="channel" id="sideMailCh" data-go="mail" role="button" tabindex="0" title="Открыть письма за сегодня и черновики"><span class="ico">@</span><div><b>Outlook · почта</b><small id="chMailSmall">80 писем за неделю · 16 сегодня</small></div><em>ON</em></div>
+        <div class="channel" id="sideTgCh" data-go="tg" role="button" tabindex="0" title="Открыть подключение Telegram"><span class="ico">TG</span><div><b>Telegram</b><small id="chTgSmall">Bot API · 2 chat_id</small></div><em>ON</em></div>
       </div>
 
       <nav class="nav">
@@ -1153,7 +1163,7 @@
           <div class="card meet-card">
             <h3>Свои каналы</h3>
             <div class="dist-note" style="margin-top:-4px">Введите свои данные — они сохраняются только в этом браузере и никуда не отправляются. Пароли здесь не запрашиваются: вход в почту по IMAP выполняет локальный дашборд.</div>
-            <div class="int-card">
+            <div class="int-card" id="linkMailCard">
               <div class="int-head"><span class="ico">@</span><div><b>Почты</b><small>IMAP / SMTP · Outlook, Gmail, Яндекс, Mail.ru</small></div><span class="badge" id="linkMailBadge">нет почт</span></div>
               <div class="int-form">
                 <div class="int-row2 pair">
@@ -1174,7 +1184,7 @@
                 <div class="mail-day" id="linkMailDay" hidden></div>
               </div>
             </div>
-            <div class="int-card">
+            <div class="int-card" id="linkTgCard">
               <div class="int-head"><span class="ico">TG</span><div><b>Telegram</b><small>аккаунты и боты · добавление вручную</small></div><span class="badge" id="linkTgBadge">нет аккаунтов</span></div>
               <div class="int-form">
                 <div class="int-row2 pair">
@@ -2363,6 +2373,40 @@
   }
   $$(".nav-btn").forEach(btn => btn.addEventListener("click", () => showView(btn.dataset.view)));
 
+  /* каналы в сайдбаре: переход к письмам/черновикам и Telegram */
+  function goChannels(sel) {
+    showView("links");
+    window.setTimeout(() => {
+      const targetSel = typeof sel === "function" ? sel() : sel;
+      const t = targetSel && $(targetSel);
+      if (!t) return;
+      const r = t.getBoundingClientRect();
+      const top = Math.max(0, window.scrollY + r.top - Math.max(16, (window.innerHeight - r.height) / 2));
+      const from = window.scrollY;
+      window.scrollTo({ top, behavior: "smooth" });
+      window.setTimeout(() => {
+        if (Math.abs(window.scrollY - from) < 4) window.scrollTo(0, top);
+      }, 420);
+      t.classList.remove("flash");
+      void t.offsetWidth;
+      t.classList.add("flash");
+      window.setTimeout(() => t.classList.remove("flash"), 1750);
+    }, 80);
+  }
+  function sideChannel(id, sel) {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("click", () => goChannels(sel));
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goChannels(sel); }
+    });
+  }
+  sideChannel("#sideMailCh", () => {
+    const day = $("#linkMailDay");
+    return day && !day.hidden ? "#linkMailDay" : "#linkMailCard";
+  });
+  sideChannel("#sideTgCh", "#linkTgCard");
+
   /* ---------- бот ---------- */
   const chatLog = $("#chatLog");
   function addMsg(role, html, meta) {
@@ -2896,14 +2940,19 @@
   let mdOpen = null; /* null — раскрыт первый черновик; "" — всё свёрнуто; id — раскрыт он */
   const mdMinutes = it => { const m = /^(\d{1,2}):(\d{2})/.exec(it.time || ""); return m ? (+m[1]) * 60 + (+m[2]) : 0; };
   const mdCopies = it => { const m = /×(\d+)/.exec(it.time || ""); return m ? +m[1] : 1; };
+  function mdHHMM(iso) {
+    const t = iso ? new Date(iso) : null;
+    return t && !isNaN(t) ? t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
+  }
   function renderMailDay(d) {
     const box = $("#linkMailDay");
     if (!box) return;
     const mails = (d && d.mails) || [];
     if (!mails.length) { box.hidden = true; box.innerHTML = ""; return; }
     const mail = items.filter(i => i.channel === "Почта").slice().sort((a, b) => mdMinutes(b) - mdMinutes(a));
+    const formed = !!(d && d.draftsAt);
     const autoId = (mail.find(i => i.status !== "ignore") || {}).id || "";
-    const openId = mdOpen === null ? autoId : mdOpen;
+    const openId = formed ? (mdOpen === null ? autoId : mdOpen) : "";
     const letters = mail.reduce((s, i) => s + mdCopies(i), 0);
     const drafts = mail.filter(i => i.status !== "ignore").length;
     const esc = mail.filter(i => i.status === "escalation").length;
@@ -2911,19 +2960,51 @@
     box.hidden = false;
     box.innerHTML = `
       <div class="mail-day-head"><b>Письма за сегодня · ${escHtml(today)}</b><small>${escHtml(mails[0].address)}${mails.length > 1 ? " +" + (mails.length - 1) : ""}</small></div>
-      <div class="mail-day-sum">${letters} ${plural(letters, ["письмо", "письма", "писем"])} · ${mail.length} ${plural(mail.length, ["тема", "темы", "тем"])} · ${drafts} ${plural(drafts, ["черновик", "черновика", "черновиков"])} · ${esc} на подтверждение</div>
+      <div class="mail-day-sum">${letters} ${plural(letters, ["письмо", "письма", "писем"])} · ${mail.length} ${plural(mail.length, ["тема", "темы", "тем"])} · ${formed ? drafts + " " + plural(drafts, ["черновик", "черновика", "черновиков"]) + " · " + esc + " на подтверждение" : "черновики ещё не сформированы"}</div>
+      ${formed
+        ? `<div class="md-formed">Черновики сформированы в ${escHtml(mdHHMM(d.draftsAt))} · ничего не отправлено</div>`
+        : `<div class="md-form-row"><button class="btn primary small" type="button" data-md-form>Сформировать черновики</button><small>${drafts} ${plural(drafts, ["черновик", "черновика", "черновиков"])} · ${esc} на подтверждение</small></div>`}
       <div class="mail-day-list">${mail.map(it => `
         <div class="md-letter">
           <div class="md-top"><span class="md-time">${escHtml(it.time)}</span><b>${escHtml(it.name)}</b><span class="badge ${it.sent ? "sent" : badgeClass[it.status]}">${it.sent ? "Отправлено" : statusLabel[it.status]}</span></div>
           <div class="md-subject">${escHtml(it.subject)}</div>
           <div class="md-actions">
-            <button type="button" data-md-open="${it.id}">${openId === it.id ? "Свернуть черновик" : "Черновик"}</button>
+            ${formed ? `<button type="button" data-md-open="${it.id}">${openId === it.id ? "Свернуть черновик" : "Черновик"}</button>` : ""}
             <button type="button" data-md-go="${it.id}">Открыть в ленте</button>
-            ${openId === it.id ? `<button type="button" data-md-copy="${it.id}">Копировать</button>` : ""}
+            ${formed && openId === it.id ? `<button type="button" data-md-copy="${it.id}">Копировать</button>` : ""}
           </div>
-          ${openId === it.id ? `<div class="md-draft"><div class="md-draft-label">${it.status === "escalation" ? "Черновик · без вашего подтверждения не уходит" : "Что сделала Ася по правилу профиля"}</div><pre>${escHtml(it.draft)}</pre></div>` : ""}
+          ${formed && openId === it.id ? `<div class="md-draft"><div class="md-draft-label">${it.status === "escalation" ? "Черновик · без вашего подтверждения не уходит" : "Что сделала Ася по правилу профиля"}</div><pre>${escHtml(it.draft)}</pre></div>` : ""}
         </div>`).join("")}</div>
-      <div class="md-note">Это демо-письма сценария за сегодня: 0 отправок без вас. Настоящий ящик по IMAP/SMTP подключает локальный дашборд AsiStantAI — пароли на стенд не попадают.</div>`;
+      <div class="md-note">${formed
+        ? "Это демо-письма сценария за сегодня: 0 отправок без вас. Настоящий ящик по IMAP/SMTP подключает локальный дашборд AsiStantAI — пароли на стенд не попадают."
+        : "Нажмите «Сформировать черновики» — Ася разберёт письма за сегодня и подготовит ответы со ссылками на факты. Всё в этом браузере: 0 отправок без вас."}</div>`;
+  }
+  let mdForming = false;
+  function formDrafts(btn) {
+    if (mdForming) return;
+    mdForming = true;
+    const mail = items.filter(i => i.channel === "Почта" && i.status !== "ignore");
+    const total = mail.length;
+    let done = 0;
+    const tick = () => {
+      if (!document.body.contains(btn)) { mdForming = false; return; }
+      if (done < total) {
+        done++;
+        btn.textContent = "Формирую… " + done + " из " + total;
+        setTimeout(tick, 160);
+        return;
+      }
+      btn.textContent = "Готово · " + total + " " + plural(total, ["черновик", "черновика", "черновиков"]);
+      setTimeout(() => {
+        mdForming = false;
+        mdOpen = null;
+        linksStore({ draftsAt: new Date().toISOString() });
+        linkState("#linkMailState", "Черновики сформированы: " + total + " ответов со ссылками на факты. Ничего не отправлено — подтверждение за вами.", "ok");
+        toast("Черновики готовы", total + " " + plural(total, ["черновик", "черновика", "черновиков"]) + " · 0 отправок без вас");
+      }, 260);
+    };
+    btn.disabled = true;
+    tick();
   }
   async function copyDraft(id) {
     const it = items.find(x => x.id === id);
@@ -2932,10 +3013,12 @@
     catch (e) { try { const ta = document.createElement("textarea"); ta.value = it.draft; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("Черновик скопирован", it.subject); } catch (e2) { toast("Не удалось скопировать", "Выделите текст черновика вручную."); } }
   }
   $("#linkMailDay").addEventListener("click", e => {
+    const form = e.target.closest("[data-md-form]");
     const open = e.target.closest("[data-md-open]");
     const copy = e.target.closest("[data-md-copy]");
     const go = e.target.closest("[data-md-go]");
-    if (open) {
+    if (form) formDrafts(form);
+    else if (open) {
       const id = open.dataset.mdOpen;
       const mail = items.filter(i => i.channel === "Почта").slice().sort((a, b) => mdMinutes(b) - mdMinutes(a));
       const autoId = (mail.find(i => i.status !== "ignore") || {}).id || "";
@@ -3002,15 +3085,15 @@
       linkState("#linkMailState", "Этот адрес уже в списке.", "err");
       return;
     }
-    linksStore({ mails: [{ id: linkId(), address, provider, added: new Date().toISOString() }].concat(d.mails) });
+    linksStore({ mails: [{ id: linkId(), address, provider, added: new Date().toISOString() }].concat(d.mails), draftsAt: null });
     $("#linkMailAddress").value = "";
     mdOpen = null;
     renderMailDay(linksData());
     const mail = items.filter(i => i.channel === "Почта");
     const letters = mail.reduce((s, i) => s + mdCopies(i), 0);
     const drafts = mail.filter(i => i.status !== "ignore").length;
-    linkState("#linkMailState", "Добавлено: " + address + " · " + (PROVIDER_NAME[provider] || "почта") + ". Подгружены письма за сегодня: " + letters + " писем, " + drafts + " черновиков. Настоящий ящик по IMAP подключает локальный дашборд — пароль на стенд не нужен.", "ok");
-    toast("Письма за день подгружены", letters + " писем · " + mail.length + " тем · " + drafts + " черновиков. Демо-сценарий, пароль не нужен.");
+    linkState("#linkMailState", "Добавлено: " + address + " · " + (PROVIDER_NAME[provider] || "почта") + ". Письма за сегодня: " + letters + " писем, " + drafts + " черновиков — нажмите «Сформировать черновики». Настоящий ящик по IMAP подключает локальный дашборд — пароль на стенд не нужен.", "ok");
+    toast("Почта добавлена", letters + " писем · нажмите «Сформировать черновики»");
     const dayBox = $("#linkMailDay");
     if (dayBox) dayBox.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
